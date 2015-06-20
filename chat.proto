@@ -6,9 +6,9 @@ package proto;
 service ChatService {
 	rpc Receive(Chat.Nil) returns (stream Chat.Message); // 接收本服消息
 	rpc Send(Chat.Message) returns (Chat.Nil);  // 发送一个消息
-	rpc Inbox(Chat.Id) returns (Chat.Nil);  // 读取玩家的私人邮箱
-	rpc GroupInbox(Chat.Id) returns (Chat.Nil);  // 读取联盟邮箱
-	rpc GlobalInbox(Chat.Id) returns (Chat.Nil);  // 读取世界邮箱
+	rpc Inbox(Chat.Id) returns (Chat.MessageList);  // 读取玩家的私人邮箱
+	rpc GroupInbox(Chat.Id) returns (Chat.MessageList);  // 读取联盟邮箱
+	rpc GlobalInbox(Chat.Id) returns (Chat.MessageList);  // 读取世界邮箱
 	rpc CreateUser(Chat.Id) returns (Chat.Nil); // 创建一个用户
 	rpc CreateGroup(Chat.Id) returns (Chat.Nil); // 创建一个组
 	rpc JoinGroup(Chat.JoinGroup) returns (Chat.Nil); // 加入一个组
@@ -29,6 +29,9 @@ message Chat {
 		MessageType Type=3;		// message type
 		uint64 ts=4; 			// timestamp get from snowflake
 		string Body=5;			// eg:"hello, how are you?"	
+	}
+	message MessageList {
+		repeated Message List=1;	// message list
 	}
 	message Id {
 		int32 Id=1; 		// eg:1

@@ -76,6 +76,21 @@ func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
 func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Message) ProtoMessage()    {}
 
+type Chat_MessageList struct {
+	List []*Chat_Message `protobuf:"bytes,1,rep" json:"List,omitempty"`
+}
+
+func (m *Chat_MessageList) Reset()         { *m = Chat_MessageList{} }
+func (m *Chat_MessageList) String() string { return proto1.CompactTextString(m) }
+func (*Chat_MessageList) ProtoMessage()    {}
+
+func (m *Chat_MessageList) GetList() []*Chat_Message {
+	if m != nil {
+		return m.List
+	}
+	return nil
+}
+
 type Chat_Id struct {
 	Id int32 `protobuf:"varint,1,opt" json:"Id,omitempty"`
 }
@@ -111,9 +126,9 @@ func init() {
 type ChatServiceClient interface {
 	Receive(ctx context.Context, in *Chat_Nil, opts ...grpc.CallOption) (ChatService_ReceiveClient, error)
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
-	Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
-	GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
-	GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error)
+	GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error)
+	GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error)
 	CreateUser(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 	CreateGroup(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 	JoinGroup(ctx context.Context, in *Chat_JoinGroup, opts ...grpc.CallOption) (*Chat_Nil, error)
@@ -169,8 +184,8 @@ func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...
 	return out, nil
 }
 
-func (c *chatServiceClient) Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
+func (c *chatServiceClient) Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error) {
+	out := new(Chat_MessageList)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Inbox", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -178,8 +193,8 @@ func (c *chatServiceClient) Inbox(ctx context.Context, in *Chat_Id, opts ...grpc
 	return out, nil
 }
 
-func (c *chatServiceClient) GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
+func (c *chatServiceClient) GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error) {
+	out := new(Chat_MessageList)
 	err := grpc.Invoke(ctx, "/proto.ChatService/GroupInbox", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -187,8 +202,8 @@ func (c *chatServiceClient) GroupInbox(ctx context.Context, in *Chat_Id, opts ..
 	return out, nil
 }
 
-func (c *chatServiceClient) GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
+func (c *chatServiceClient) GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_MessageList, error) {
+	out := new(Chat_MessageList)
 	err := grpc.Invoke(ctx, "/proto.ChatService/GlobalInbox", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -237,9 +252,9 @@ func (c *chatServiceClient) LeaveGroup(ctx context.Context, in *Chat_LeaveGroup,
 type ChatServiceServer interface {
 	Receive(*Chat_Nil, ChatService_ReceiveServer) error
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
-	Inbox(context.Context, *Chat_Id) (*Chat_Nil, error)
-	GroupInbox(context.Context, *Chat_Id) (*Chat_Nil, error)
-	GlobalInbox(context.Context, *Chat_Id) (*Chat_Nil, error)
+	Inbox(context.Context, *Chat_Id) (*Chat_MessageList, error)
+	GroupInbox(context.Context, *Chat_Id) (*Chat_MessageList, error)
+	GlobalInbox(context.Context, *Chat_Id) (*Chat_MessageList, error)
 	CreateUser(context.Context, *Chat_Id) (*Chat_Nil, error)
 	CreateGroup(context.Context, *Chat_Id) (*Chat_Nil, error)
 	JoinGroup(context.Context, *Chat_JoinGroup) (*Chat_Nil, error)

@@ -44,13 +44,13 @@ func (s *server) Send(ctx context.Context, msg *pb.Chat_Message) (*pb.Chat_Nil, 
 	return nil, nil
 }
 
-func (s *server) Inbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+func (s *server) Inbox(context.Context, *pb.Chat_Id) (*pb.Chat_MessageList, error) {
 	return nil, nil
 }
-func (s *server) GroupInbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+func (s *server) GroupInbox(context.Context, *pb.Chat_Id) (*pb.Chat_MessageList, error) {
 	return nil, nil
 }
-func (s *server) GlobalInbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+func (s *server) GlobalInbox(context.Context, *pb.Chat_Id) (*pb.Chat_MessageList, error) {
 	return nil, nil
 }
 func (s *server) CreateUser(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
