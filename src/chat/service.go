@@ -27,6 +27,6 @@ func (s *server) Receive(p *pb.Chat_Nil, stream pb.ChatService_ReceiveServer) er
 	return nil
 }
 
-func (s *server) Send(ctx context.Context, msg *pb.Chat_Message) (*pb.Chat_SendResult, error) {
+func (s *server) Send(ctx context.Context, msg *pb.Chat_Message) (*pb.Chat_Nil, error) {
 	return nil, nil
 }

@@ -5,7 +5,7 @@ package proto;
 // chat service definition
 service ChatService {
 	rpc Receive(Chat.Nil) returns (stream Chat.Message); // 接收本服消息
-	rpc Send(Chat.Message) returns (Chat.SendResult);  // 发送一个消息
+	rpc Send(Chat.Message) returns (Chat.Nil);  // 发送一个消息
 }
 
 message Chat {

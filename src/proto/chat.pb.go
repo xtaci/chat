@@ -91,7 +91,7 @@ func init() {
 
 type ChatServiceClient interface {
 	Receive(ctx context.Context, in *Chat_Nil, opts ...grpc.CallOption) (ChatService_ReceiveClient, error)
-	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_SendResult, error)
+	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
 
 type chatServiceClient struct {
@@ -134,8 +134,8 @@ func (x *chatServiceReceiveClient) Recv() (*Chat_Message, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_SendResult, error) {
-	out := new(Chat_SendResult)
+func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...
 
 type ChatServiceServer interface {
 	Receive(*Chat_Nil, ChatService_ReceiveServer) error
-	Send(context.Context, *Chat_Message) (*Chat_SendResult, error)
+	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
