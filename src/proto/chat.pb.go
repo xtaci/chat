@@ -68,7 +68,8 @@ type Chat_Message struct {
 	From int32            `protobuf:"varint,1,opt" json:"From,omitempty"`
 	To   int32            `protobuf:"varint,2,opt" json:"To,omitempty"`
 	Type Chat_MessageType `protobuf:"varint,3,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
-	Body string           `protobuf:"bytes,4,opt" json:"Body,omitempty"`
+	Ts   uint64           `protobuf:"varint,4,opt,name=ts" json:"ts,omitempty"`
+	Body string           `protobuf:"bytes,5,opt" json:"Body,omitempty"`
 }
 
 func (m *Chat_Message) Reset()         { *m = Chat_Message{} }

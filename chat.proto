@@ -22,6 +22,7 @@ message Chat {
 		int32 From=1;	// eg:1
 		int32 To=2; 	// eg:2 
 		MessageType Type=3;	// message type
-		string Body=4;	// eg:"hello, how are you?"	
+		uint64 ts=4; // timestamp get from snowflake
+		string Body=5;	// eg:"hello, how are you?"	
 	}
 }

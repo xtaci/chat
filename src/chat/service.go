@@ -13,11 +13,20 @@ const (
 )
 
 const (
-	BOLTDB_FILE   = "/data/CHAT.DAT"
-	BOLTDB_BUCKET = "CHAT"
+	BOLTDB_FILE          = "/data/CHAT.DAT"
+	BOLTDB_P2P_BUCKET    = "P2P"
+	BOLTDB_GROUP_BUCKET  = "GROUP"
+	BOLTDB_GLOBAL_BUCKET = "GLOBAL"
 )
 
+type msg_queue struct {
+	msgs []pb.Chat_Message
+}
+
 type server struct {
+	p2p    map[int32]*msg_queue
+	group  map[int32]*msg_queue
+	global msg_queue
 }
 
 func (s *server) init() {
