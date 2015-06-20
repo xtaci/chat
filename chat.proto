@@ -4,34 +4,27 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Query(Chat.Channel) returns (stream Chat.MsgList); // 接收消息
-	rpc Send(Chat.Msg) returns (Chat.NullResult);  // 发送一个消息
+	rpc Receive(Chat.Nil) returns (stream Chat.Message); // 接收本服消息
+	rpc Send(Chat.Message) returns (Chat.SendResult);  // 发送一个消息
 }
 
-message Chat { 
-	message NullResult {
+message Chat {
+	message Nil {
 	}
-	//chat room channel;
-	message Channel{
-		string name=1;	
+	message SendResult{
+		bool Result=1;
 	}
-	message Msg {
-		//who send, if is 0, it's the sys_user.
-		int32 from_user=1;
-		int32 to_user=2;
 
-		//the user name who send the message.
-		string user_name=3;
-		string channel=4;
-
-		//message body
-		string msg=5;
-
-		//create message time.
-		int64 create_time=6;
-		
+	enum MessageType {
+		P2P=0;
+		GROUP=1;
+		GLOBAL=2;
 	}
-	message MsgList {
-		repeated Msg list=1;
+
+	message Message {
+		int32 From=1;	// eg:1
+		int32 To=2; 	// eg:2 
+		MessageType Type=3;	// message type
+		string Body=4;	// eg:"hello, how are you?"	
 	}
 }

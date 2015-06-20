@@ -1,2 +1,2 @@
 # chat
-	chat service for GameGophers
+XMPP based chat server for game

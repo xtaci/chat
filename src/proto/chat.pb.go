@@ -27,6 +27,29 @@ var _ grpc.ClientConn
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
 
+type Chat_MessageType int32
+
+const (
+	Chat_P2P    Chat_MessageType = 0
+	Chat_GROUP  Chat_MessageType = 1
+	Chat_GLOBAL Chat_MessageType = 2
+)
+
+var Chat_MessageType_name = map[int32]string{
+	0: "P2P",
+	1: "GROUP",
+	2: "GLOBAL",
+}
+var Chat_MessageType_value = map[string]int32{
+	"P2P":    0,
+	"GROUP":  1,
+	"GLOBAL": 2,
+}
+
+func (x Chat_MessageType) String() string {
+	return proto1.EnumName(Chat_MessageType_name, int32(x))
+}
+
 type Chat struct {
 }
 
@@ -34,62 +57,41 @@ func (m *Chat) Reset()         { *m = Chat{} }
 func (m *Chat) String() string { return proto1.CompactTextString(m) }
 func (*Chat) ProtoMessage()    {}
 
-type Chat_NullResult struct {
+type Chat_Nil struct {
 }
 
-func (m *Chat_NullResult) Reset()         { *m = Chat_NullResult{} }
-func (m *Chat_NullResult) String() string { return proto1.CompactTextString(m) }
-func (*Chat_NullResult) ProtoMessage()    {}
+func (m *Chat_Nil) Reset()         { *m = Chat_Nil{} }
+func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
+func (*Chat_Nil) ProtoMessage()    {}
 
-// chat room channel;
-type Chat_Channel struct {
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+type Chat_SendResult struct {
+	Result bool `protobuf:"varint,1,opt" json:"Result,omitempty"`
 }
 
-func (m *Chat_Channel) Reset()         { *m = Chat_Channel{} }
-func (m *Chat_Channel) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Channel) ProtoMessage()    {}
+func (m *Chat_SendResult) Reset()         { *m = Chat_SendResult{} }
+func (m *Chat_SendResult) String() string { return proto1.CompactTextString(m) }
+func (*Chat_SendResult) ProtoMessage()    {}
 
-type Chat_Msg struct {
-	// who send, if is 0, it's the sys_user.
-	FromUser int32 `protobuf:"varint,1,opt,name=from_user" json:"from_user,omitempty"`
-	ToUser   int32 `protobuf:"varint,2,opt,name=to_user" json:"to_user,omitempty"`
-	// the user name who send the message.
-	UserName string `protobuf:"bytes,3,opt,name=user_name" json:"user_name,omitempty"`
-	Channel  string `protobuf:"bytes,4,opt,name=channel" json:"channel,omitempty"`
-	// message body
-	Msg string `protobuf:"bytes,5,opt,name=msg" json:"msg,omitempty"`
-	// create message time.
-	CreateTime int64 `protobuf:"varint,6,opt,name=create_time" json:"create_time,omitempty"`
+type Chat_Message struct {
+	From int32            `protobuf:"varint,1,opt" json:"From,omitempty"`
+	To   int32            `protobuf:"varint,2,opt" json:"To,omitempty"`
+	Type Chat_MessageType `protobuf:"varint,3,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
+	Body string           `protobuf:"bytes,4,opt" json:"Body,omitempty"`
 }
 
-func (m *Chat_Msg) Reset()         { *m = Chat_Msg{} }
-func (m *Chat_Msg) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Msg) ProtoMessage()    {}
-
-type Chat_MsgList struct {
-	List []*Chat_Msg `protobuf:"bytes,1,rep,name=list" json:"list,omitempty"`
-}
-
-func (m *Chat_MsgList) Reset()         { *m = Chat_MsgList{} }
-func (m *Chat_MsgList) String() string { return proto1.CompactTextString(m) }
-func (*Chat_MsgList) ProtoMessage()    {}
-
-func (m *Chat_MsgList) GetList() []*Chat_Msg {
-	if m != nil {
-		return m.List
-	}
-	return nil
-}
+func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
+func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
+func (*Chat_Message) ProtoMessage()    {}
 
 func init() {
+	proto1.RegisterEnum("proto.Chat_MessageType", Chat_MessageType_name, Chat_MessageType_value)
 }
 
 // Client API for ChatService service
 
 type ChatServiceClient interface {
-	Query(ctx context.Context, in *Chat_Channel, opts ...grpc.CallOption) (ChatService_QueryClient, error)
-	Send(ctx context.Context, in *Chat_Msg, opts ...grpc.CallOption) (*Chat_NullResult, error)
+	Receive(ctx context.Context, in *Chat_Nil, opts ...grpc.CallOption) (ChatService_ReceiveClient, error)
+	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_SendResult, error)
 }
 
 type chatServiceClient struct {
@@ -100,12 +102,12 @@ func NewChatServiceClient(cc *grpc.ClientConn) ChatServiceClient {
 	return &chatServiceClient{cc}
 }
 
-func (c *chatServiceClient) Query(ctx context.Context, in *Chat_Channel, opts ...grpc.CallOption) (ChatService_QueryClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[0], c.cc, "/proto.ChatService/Query", opts...)
+func (c *chatServiceClient) Receive(ctx context.Context, in *Chat_Nil, opts ...grpc.CallOption) (ChatService_ReceiveClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[0], c.cc, "/proto.ChatService/Receive", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &chatServiceQueryClient{stream}
+	x := &chatServiceReceiveClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -115,25 +117,25 @@ func (c *chatServiceClient) Query(ctx context.Context, in *Chat_Channel, opts ..
 	return x, nil
 }
 
-type ChatService_QueryClient interface {
-	Recv() (*Chat_MsgList, error)
+type ChatService_ReceiveClient interface {
+	Recv() (*Chat_Message, error)
 	grpc.ClientStream
 }
 
-type chatServiceQueryClient struct {
+type chatServiceReceiveClient struct {
 	grpc.ClientStream
 }
 
-func (x *chatServiceQueryClient) Recv() (*Chat_MsgList, error) {
-	m := new(Chat_MsgList)
+func (x *chatServiceReceiveClient) Recv() (*Chat_Message, error) {
+	m := new(Chat_Message)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Msg, opts ...grpc.CallOption) (*Chat_NullResult, error) {
-	out := new(Chat_NullResult)
+func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_SendResult, error) {
+	out := new(Chat_SendResult)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -144,37 +146,37 @@ func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Msg, opts ...grpc
 // Server API for ChatService service
 
 type ChatServiceServer interface {
-	Query(*Chat_Channel, ChatService_QueryServer) error
-	Send(context.Context, *Chat_Msg) (*Chat_NullResult, error)
+	Receive(*Chat_Nil, ChatService_ReceiveServer) error
+	Send(context.Context, *Chat_Message) (*Chat_SendResult, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
 	s.RegisterService(&_ChatService_serviceDesc, srv)
 }
 
-func _ChatService_Query_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Chat_Channel)
+func _ChatService_Receive_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Chat_Nil)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChatServiceServer).Query(m, &chatServiceQueryServer{stream})
+	return srv.(ChatServiceServer).Receive(m, &chatServiceReceiveServer{stream})
 }
 
-type ChatService_QueryServer interface {
-	Send(*Chat_MsgList) error
+type ChatService_ReceiveServer interface {
+	Send(*Chat_Message) error
 	grpc.ServerStream
 }
 
-type chatServiceQueryServer struct {
+type chatServiceReceiveServer struct {
 	grpc.ServerStream
 }
 
-func (x *chatServiceQueryServer) Send(m *Chat_MsgList) error {
+func (x *chatServiceReceiveServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
 func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_Msg)
+	in := new(Chat_Message)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}
@@ -196,8 +198,8 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Query",
-			Handler:       _ChatService_Query_Handler,
+			StreamName:    "Receive",
+			Handler:       _ChatService_Receive_Handler,
 			ServerStreams: true,
 		},
 	},
