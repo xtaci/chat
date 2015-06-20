@@ -20,20 +20,24 @@ const (
 	MAX_QUEUE_SIZE       = 128 // num of message kept
 )
 
-// messageq queue
-type MsgQueue struct {
-	Messages []pb.Chat_Message
+type User struct {
+	Inbox []pb.Chat_Message
+}
+
+type Group struct {
+	Users []int32
+	Inbox []pb.Chat_Message
 }
 
 type server struct {
-	Users  map[int32]*MsgQueue
-	Groups map[int32]*MsgQueue
-	Global MsgQueue
+	Users  map[int32]*User
+	Groups map[int32]*Group
+	Global []pb.Chat_Message
 }
 
 func (s *server) init() {
-	s.Users = make(map[int32]*MsgQueue)
-	s.Groups = make(map[int32]*MsgQueue)
+	s.Users = make(map[int32]*User)
+	s.Groups = make(map[int32]*Group)
 }
 
 func (s *server) Receive(p *pb.Chat_Nil, stream pb.ChatService_ReceiveServer) error {
