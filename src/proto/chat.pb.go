@@ -64,14 +64,6 @@ func (m *Chat_Nil) Reset()         { *m = Chat_Nil{} }
 func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
-type Chat_SendResult struct {
-	Result bool `protobuf:"varint,1,opt" json:"Result,omitempty"`
-}
-
-func (m *Chat_SendResult) Reset()         { *m = Chat_SendResult{} }
-func (m *Chat_SendResult) String() string { return proto1.CompactTextString(m) }
-func (*Chat_SendResult) ProtoMessage()    {}
-
 type Chat_Message struct {
 	From int32            `protobuf:"varint,1,opt" json:"From,omitempty"`
 	To   int32            `protobuf:"varint,2,opt" json:"To,omitempty"`

@@ -11,9 +11,6 @@ service ChatService {
 message Chat {
 	message Nil {
 	}
-	message SendResult{
-		bool Result=1;
-	}
 
 	enum MessageType {
 		P2P=0;
