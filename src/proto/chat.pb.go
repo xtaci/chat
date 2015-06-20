@@ -76,6 +76,32 @@ func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
 func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Message) ProtoMessage()    {}
 
+type Chat_Id struct {
+	Id int32 `protobuf:"varint,1,opt" json:"Id,omitempty"`
+}
+
+func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
+func (m *Chat_Id) String() string { return proto1.CompactTextString(m) }
+func (*Chat_Id) ProtoMessage()    {}
+
+type Chat_JoinGroup struct {
+	GroupId int32 `protobuf:"varint,1,opt" json:"GroupId,omitempty"`
+	UserId  int32 `protobuf:"varint,2,opt" json:"UserId,omitempty"`
+}
+
+func (m *Chat_JoinGroup) Reset()         { *m = Chat_JoinGroup{} }
+func (m *Chat_JoinGroup) String() string { return proto1.CompactTextString(m) }
+func (*Chat_JoinGroup) ProtoMessage()    {}
+
+type Chat_LeaveGroup struct {
+	GroupId int32 `protobuf:"varint,1,opt" json:"GroupId,omitempty"`
+	UserId  int32 `protobuf:"varint,2,opt" json:"UserId,omitempty"`
+}
+
+func (m *Chat_LeaveGroup) Reset()         { *m = Chat_LeaveGroup{} }
+func (m *Chat_LeaveGroup) String() string { return proto1.CompactTextString(m) }
+func (*Chat_LeaveGroup) ProtoMessage()    {}
+
 func init() {
 	proto1.RegisterEnum("proto.Chat_MessageType", Chat_MessageType_name, Chat_MessageType_value)
 }
@@ -85,6 +111,13 @@ func init() {
 type ChatServiceClient interface {
 	Receive(ctx context.Context, in *Chat_Nil, opts ...grpc.CallOption) (ChatService_ReceiveClient, error)
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
+	Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	CreateUser(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	CreateGroup(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	JoinGroup(ctx context.Context, in *Chat_JoinGroup, opts ...grpc.CallOption) (*Chat_Nil, error)
+	LeaveGroup(ctx context.Context, in *Chat_LeaveGroup, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
 
 type chatServiceClient struct {
@@ -136,11 +169,81 @@ func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...
 	return out, nil
 }
 
+func (c *chatServiceClient) Inbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/Inbox", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GroupInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/GroupInbox", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GlobalInbox(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/GlobalInbox", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) CreateUser(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/CreateUser", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) CreateGroup(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/CreateGroup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) JoinGroup(ctx context.Context, in *Chat_JoinGroup, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/JoinGroup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) LeaveGroup(ctx context.Context, in *Chat_LeaveGroup, opts ...grpc.CallOption) (*Chat_Nil, error) {
+	out := new(Chat_Nil)
+	err := grpc.Invoke(ctx, "/proto.ChatService/LeaveGroup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for ChatService service
 
 type ChatServiceServer interface {
 	Receive(*Chat_Nil, ChatService_ReceiveServer) error
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
+	Inbox(context.Context, *Chat_Id) (*Chat_Nil, error)
+	GroupInbox(context.Context, *Chat_Id) (*Chat_Nil, error)
+	GlobalInbox(context.Context, *Chat_Id) (*Chat_Nil, error)
+	CreateUser(context.Context, *Chat_Id) (*Chat_Nil, error)
+	CreateGroup(context.Context, *Chat_Id) (*Chat_Nil, error)
+	JoinGroup(context.Context, *Chat_JoinGroup) (*Chat_Nil, error)
+	LeaveGroup(context.Context, *Chat_LeaveGroup) (*Chat_Nil, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
@@ -180,6 +283,90 @@ func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
+func _ChatService_Inbox_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Id)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).Inbox(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_GroupInbox_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Id)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).GroupInbox(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_GlobalInbox_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Id)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).GlobalInbox(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_CreateUser_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Id)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).CreateUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_CreateGroup_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Id)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).CreateGroup(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_JoinGroup_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_JoinGroup)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).JoinGroup(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ChatService_LeaveGroup_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_LeaveGroup)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).LeaveGroup(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _ChatService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
@@ -187,6 +374,34 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Send",
 			Handler:    _ChatService_Send_Handler,
+		},
+		{
+			MethodName: "Inbox",
+			Handler:    _ChatService_Inbox_Handler,
+		},
+		{
+			MethodName: "GroupInbox",
+			Handler:    _ChatService_GroupInbox_Handler,
+		},
+		{
+			MethodName: "GlobalInbox",
+			Handler:    _ChatService_GlobalInbox_Handler,
+		},
+		{
+			MethodName: "CreateUser",
+			Handler:    _ChatService_CreateUser_Handler,
+		},
+		{
+			MethodName: "CreateGroup",
+			Handler:    _ChatService_CreateGroup_Handler,
+		},
+		{
+			MethodName: "JoinGroup",
+			Handler:    _ChatService_JoinGroup_Handler,
+		},
+		{
+			MethodName: "LeaveGroup",
+			Handler:    _ChatService_LeaveGroup_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

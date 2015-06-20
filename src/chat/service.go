@@ -17,19 +17,23 @@ const (
 	BOLTDB_P2P_BUCKET    = "P2P"
 	BOLTDB_GROUP_BUCKET  = "GROUP"
 	BOLTDB_GLOBAL_BUCKET = "GLOBAL"
+	MAX_QUEUE_SIZE       = 128 // num of message kept
 )
 
-type msg_queue struct {
-	msgs []pb.Chat_Message
+// messageq queue
+type MsgQueue struct {
+	Messages []pb.Chat_Message
 }
 
 type server struct {
-	p2p    map[int32]*msg_queue
-	group  map[int32]*msg_queue
-	global msg_queue
+	Users  map[int32]*MsgQueue
+	Groups map[int32]*MsgQueue
+	Global MsgQueue
 }
 
 func (s *server) init() {
+	s.Users = make(map[int32]*MsgQueue)
+	s.Groups = make(map[int32]*MsgQueue)
 }
 
 func (s *server) Receive(p *pb.Chat_Nil, stream pb.ChatService_ReceiveServer) error {
@@ -37,5 +41,29 @@ func (s *server) Receive(p *pb.Chat_Nil, stream pb.ChatService_ReceiveServer) er
 }
 
 func (s *server) Send(ctx context.Context, msg *pb.Chat_Message) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+
+func (s *server) Inbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+func (s *server) GroupInbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+func (s *server) GlobalInbox(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+func (s *server) CreateUser(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+
+func (s *server) CreateGroup(context.Context, *pb.Chat_Id) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+
+func (s *server) JoinGroup(context.Context, *pb.Chat_JoinGroup) (*pb.Chat_Nil, error) {
+	return nil, nil
+}
+func (s *server) LeaveGroup(context.Context, *pb.Chat_LeaveGroup) (*pb.Chat_Nil, error) {
 	return nil, nil
 }
