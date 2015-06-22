@@ -27,6 +27,46 @@ var _ grpc.ClientConn
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
 
+type Chat_MessageType int32
+
+const (
+	Chat_CHAT Chat_MessageType = 0
+	Chat_MUC  Chat_MessageType = 1
+)
+
+var Chat_MessageType_name = map[int32]string{
+	0: "CHAT",
+	1: "MUC",
+}
+var Chat_MessageType_value = map[string]int32{
+	"CHAT": 0,
+	"MUC":  1,
+}
+
+func (x Chat_MessageType) String() string {
+	return proto1.EnumName(Chat_MessageType_name, int32(x))
+}
+
+type Chat_PubSub int32
+
+const (
+	Chat_SUBSCRIBE   Chat_PubSub = 0
+	Chat_UNSUBSCRIBE Chat_PubSub = 1
+)
+
+var Chat_PubSub_name = map[int32]string{
+	0: "SUBSCRIBE",
+	1: "UNSUBSCRIBE",
+}
+var Chat_PubSub_value = map[string]int32{
+	"SUBSCRIBE":   0,
+	"UNSUBSCRIBE": 1,
+}
+
+func (x Chat_PubSub) String() string {
+	return proto1.EnumName(Chat_PubSub_name, int32(x))
+}
+
 type Chat struct {
 }
 
@@ -41,18 +81,29 @@ func (m *Chat_Nil) Reset()         { *m = Chat_Nil{} }
 func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
-type Chat_Packet struct {
-	Uid     int32  `protobuf:"varint,1,opt" json:"Uid,omitempty"`
-	Content []byte `protobuf:"bytes,2,opt,proto3" json:"Content,omitempty"`
+type Chat_Message struct {
+	Type Chat_MessageType `protobuf:"varint,1,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
+	From int32            `protobuf:"varint,2,opt" json:"From,omitempty"`
+	To   int32            `protobuf:"varint,3,opt" json:"To,omitempty"`
+	Body []byte           `protobuf:"bytes,4,opt,proto3" json:"Body,omitempty"`
 }
 
-func (m *Chat_Packet) Reset()         { *m = Chat_Packet{} }
-func (m *Chat_Packet) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Packet) ProtoMessage()    {}
+func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
+func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
+func (*Chat_Message) ProtoMessage()    {}
+
+type Chat_Param struct {
+	PS    Chat_PubSub `protobuf:"varint,1,opt,enum=proto.Chat_PubSub" json:"PS,omitempty"`
+	Uid   int32       `protobuf:"varint,2,opt" json:"Uid,omitempty"`
+	MucId int32       `protobuf:"varint,3,opt" json:"MucId,omitempty"`
+}
+
+func (m *Chat_Param) Reset()         { *m = Chat_Param{} }
+func (m *Chat_Param) String() string { return proto1.CompactTextString(m) }
+func (*Chat_Param) ProtoMessage()    {}
 
 type Chat_Id struct {
-	Id   int32  `protobuf:"varint,1,opt" json:"Id,omitempty"`
-	Name string `protobuf:"bytes,2,opt" json:"Name,omitempty"`
+	Id int32 `protobuf:"varint,1,opt" json:"Id,omitempty"`
 }
 
 func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
@@ -69,15 +120,17 @@ func (m *Chat_MucReq) String() string { return proto1.CompactTextString(m) }
 func (*Chat_MucReq) ProtoMessage()    {}
 
 func init() {
+	proto1.RegisterEnum("proto.Chat_MessageType", Chat_MessageType_name, Chat_MessageType_value)
+	proto1.RegisterEnum("proto.Chat_PubSub", Chat_PubSub_name, Chat_PubSub_value)
 }
 
 // Client API for ChatService service
 
 type ChatServiceClient interface {
-	Packet(ctx context.Context, opts ...grpc.CallOption) (ChatService_PacketClient, error)
-	// Control API
+	Subscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
+	MucSubscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error)
+	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
 	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
-	UpdateInfo(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 	RegMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
 	JoinMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
 	LeaveMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
@@ -91,49 +144,80 @@ func NewChatServiceClient(cc *grpc.ClientConn) ChatServiceClient {
 	return &chatServiceClient{cc}
 }
 
-func (c *chatServiceClient) Packet(ctx context.Context, opts ...grpc.CallOption) (ChatService_PacketClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[0], c.cc, "/proto.ChatService/Packet", opts...)
+func (c *chatServiceClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_SubscribeClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[0], c.cc, "/proto.ChatService/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &chatServicePacketClient{stream}
+	x := &chatServiceSubscribeClient{stream}
 	return x, nil
 }
 
-type ChatService_PacketClient interface {
-	Send(*Chat_Packet) error
-	Recv() (*Chat_Packet, error)
+type ChatService_SubscribeClient interface {
+	Send(*Chat_Param) error
+	Recv() (*Chat_Message, error)
 	grpc.ClientStream
 }
 
-type chatServicePacketClient struct {
+type chatServiceSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *chatServicePacketClient) Send(m *Chat_Packet) error {
+func (x *chatServiceSubscribeClient) Send(m *Chat_Param) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *chatServicePacketClient) Recv() (*Chat_Packet, error) {
-	m := new(Chat_Packet)
+func (x *chatServiceSubscribeClient) Recv() (*Chat_Message, error) {
+	m := new(Chat_Message)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+func (c *chatServiceClient) MucSubscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[1], c.cc, "/proto.ChatService/MucSubscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &chatServiceMucSubscribeClient{stream}
+	return x, nil
+}
+
+type ChatService_MucSubscribeClient interface {
+	Send(*Chat_Param) error
+	Recv() (*Chat_Message, error)
+	grpc.ClientStream
+}
+
+type chatServiceMucSubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *chatServiceMucSubscribeClient) Send(m *Chat_Param) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *chatServiceMucSubscribeClient) Recv() (*Chat_Message, error) {
+	m := new(Chat_Message)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/Reg", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *chatServiceClient) UpdateInfo(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
+func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/UpdateInfo", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.ChatService/Reg", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -170,10 +254,10 @@ func (c *chatServiceClient) LeaveMuc(ctx context.Context, in *Chat_MucReq, opts 
 // Server API for ChatService service
 
 type ChatServiceServer interface {
-	Packet(ChatService_PacketServer) error
-	// Control API
+	Subscribe(ChatService_SubscribeServer) error
+	MucSubscribe(ChatService_MucSubscribeServer) error
+	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
 	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
-	UpdateInfo(context.Context, *Chat_Id) (*Chat_Nil, error)
 	RegMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
 	JoinMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
 	LeaveMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
@@ -183,30 +267,68 @@ func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
 	s.RegisterService(&_ChatService_serviceDesc, srv)
 }
 
-func _ChatService_Packet_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ChatServiceServer).Packet(&chatServicePacketServer{stream})
+func _ChatService_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ChatServiceServer).Subscribe(&chatServiceSubscribeServer{stream})
 }
 
-type ChatService_PacketServer interface {
-	Send(*Chat_Packet) error
-	Recv() (*Chat_Packet, error)
+type ChatService_SubscribeServer interface {
+	Send(*Chat_Message) error
+	Recv() (*Chat_Param, error)
 	grpc.ServerStream
 }
 
-type chatServicePacketServer struct {
+type chatServiceSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *chatServicePacketServer) Send(m *Chat_Packet) error {
+func (x *chatServiceSubscribeServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *chatServicePacketServer) Recv() (*Chat_Packet, error) {
-	m := new(Chat_Packet)
+func (x *chatServiceSubscribeServer) Recv() (*Chat_Param, error) {
+	m := new(Chat_Param)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
+}
+
+func _ChatService_MucSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ChatServiceServer).MucSubscribe(&chatServiceMucSubscribeServer{stream})
+}
+
+type ChatService_MucSubscribeServer interface {
+	Send(*Chat_Message) error
+	Recv() (*Chat_Param, error)
+	grpc.ServerStream
+}
+
+type chatServiceMucSubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *chatServiceMucSubscribeServer) Send(m *Chat_Message) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *chatServiceMucSubscribeServer) Recv() (*Chat_Param, error) {
+	m := new(Chat_Param)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Chat_Message)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ChatServiceServer).Send(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
@@ -215,18 +337,6 @@ func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, codec grpc.C
 		return nil, err
 	}
 	out, err := srv.(ChatServiceServer).Reg(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _ChatService_UpdateInfo_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_Id)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ChatServiceServer).UpdateInfo(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -274,12 +384,12 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Reg",
-			Handler:    _ChatService_Reg_Handler,
+			MethodName: "Send",
+			Handler:    _ChatService_Send_Handler,
 		},
 		{
-			MethodName: "UpdateInfo",
-			Handler:    _ChatService_UpdateInfo_Handler,
+			MethodName: "Reg",
+			Handler:    _ChatService_Reg_Handler,
 		},
 		{
 			MethodName: "RegMuc",
@@ -296,8 +406,14 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Packet",
-			Handler:       _ChatService_Packet_Handler,
+			StreamName:    "Subscribe",
+			Handler:       _ChatService_Subscribe_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "MucSubscribe",
+			Handler:       _ChatService_MucSubscribe_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

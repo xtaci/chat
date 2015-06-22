@@ -48,34 +48,32 @@ func (s *server) init() {
 	s.Mucs = make(map[int32]*Muc)
 }
 
-func (s *server) Packet(stream ChatService_PacketServer) error {
-	// TODO: for bidirectional stream
+func (s *server) Subscribe(ChatService_SubscribeServer) error {
 	return nil
+}
+
+func (s *server) MucSubscribe(ChatService_MucSubscribeServer) error {
+	return nil
+}
+
+func (s *server) Send(context.Context, *Chat_Message) (*Chat_Nil, error) {
+	return nil, nil
 }
 
 func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
 	s.Lock()
 	defer s.Unlock()
-	// TODO: register a user
-	return nil, nil
-}
-
-func (s *server) UpdateInfo(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
-	// TODO: update a user
 	return nil, nil
 }
 
 func (s *server) RegMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error) {
-	// TODO: register a muc
 	return nil, nil
 }
 
 func (s *server) JoinMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error) {
-	// TODO: join a muc
 	return nil, nil
 }
 
 func (s *server) LeaveMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error) {
-	// TODO: leave a muc
 	return nil, nil
 }

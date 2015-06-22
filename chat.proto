@@ -4,10 +4,10 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Packet(stream Chat.Packet) returns (stream Chat.Packet);  // 透传消息, 双向流
-	// Control API
+	rpc Subscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订个人消息
+	rpc MucSubscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订MUC消息
+	rpc Send(Chat.Message) returns (Chat.Nil);	// 发送消息
 	rpc Reg(Chat.Id) returns (Chat.Nil);	// 注册一个聊天用户
-	rpc UpdateInfo(Chat.Id) returns (Chat.Nil);	// 更新用户信息
 	rpc RegMuc(Chat.MucReq) returns (Chat.Nil); // 注册一个MUC
 	rpc JoinMuc(Chat.MucReq) returns (Chat.Nil); // 加入一个MUC
 	rpc LeaveMuc(Chat.MucReq) returns (Chat.Nil); // 离开一个MUC
@@ -15,16 +15,30 @@ service ChatService {
 
 message Chat {
 	message Nil { }
-	message Packet {
-		int32 Uid=1;	// user id
-		bytes Content=2;
+	enum MessageType {
+		CHAT=0;
+		MUC=1;
+	}
+	message Message {
+		MessageType Type=1;
+		int32 From=2;	
+		int32 To=3;
+		bytes Body=4;
+	}
+	enum PubSub {
+		SUBSCRIBE=0;
+		UNSUBSCRIBE=1;
+	}
+	message Param{
+		PubSub PS=1;
+		int32 Uid=2;	
+		int32 MucId=3;
 	}
 	message Id {
 		int32 Id=1;
-		string Name=2;	// 用户名
 	}
 	message MucReq{
-		int32 MucId=1;		// multi user chat id
-		int32 UserId=2;		// user id
+		int32 MucId=1;
+		int32 UserId=2;
 	}
 }
