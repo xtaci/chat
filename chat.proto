@@ -4,44 +4,27 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Receive(Chat.Nil) returns (stream Chat.Message); // 接收本服消息
-	rpc Send(Chat.Message) returns (Chat.Nil);  // 发送一个消息
-	rpc Inbox(Chat.Id) returns (Chat.MessageList);  // 读取私人邮箱
-	rpc GroupInbox(Chat.Id) returns (Chat.MessageList);  // 读取组邮箱
-	rpc GlobalInbox(Chat.Id) returns (Chat.MessageList);  // 读取全局邮箱
-	rpc CreateUser(Chat.Id) returns (Chat.Nil); // 创建一个用户
-	rpc CreateGroup(Chat.Id) returns (Chat.Nil); // 创建一个组
-	rpc JoinGroup(Chat.JoinGroup) returns (Chat.Nil); // 加入一个组
-	rpc LeaveGroup(Chat.LeaveGroup) returns (Chat.Nil); // 离开一个组
+	rpc Packet(stream Chat.Packet) returns (stream Chat.Packet);  // 透传消息, 双向流
+	// Control API
+	rpc Reg(Chat.Id) returns (Chat.Nil);	// 注册一个聊天用户
+	rpc UpdateInfo(Chat.Id) returns (Chat.Nil);	// 更新用户信息
+	rpc RegMuc(Chat.MucReq) returns (Chat.Nil); // 注册一个MUC
+	rpc JoinMuc(Chat.MucReq) returns (Chat.Nil); // 加入一个MUC
+	rpc LeaveMuc(Chat.MucReq) returns (Chat.Nil); // 离开一个MUC
 }
 
 message Chat {
-	message Nil {
-	}
-	enum MessageType {
-		P2P=0;
-		GROUP=1;
-		GLOBAL=2;
-	}
-	message Message {
-		int32 From=1;			// eg:1
-		int32 To=2; 			// eg:2 
-		MessageType Type=3;		// message type
-		uint64 ts=4; 			// timestamp get from snowflake
-		string Body=5;			// eg:"hello, how are you?"	
-	}
-	message MessageList {
-		repeated Message List=1;	// message list
+	message Nil { }
+	message Packet {
+		int32 Uid=1;	// user id
+		bytes Content=2;
 	}
 	message Id {
-		int32 Id=1; 		// eg:1
+		int32 Id=1;
+		string Name=2;	// 用户名
 	}
-	message JoinGroup {
-		int32 GroupId=1;	// group  to join into
-		int32 UserId=2;		// user to join
-	}
-	message LeaveGroup {
-		int32 GroupId=1;	// group to leave from
-		int32 UserId=2;		// user to leave
+	message MucReq{
+		int32 MucId=1;		// multi user chat id
+		int32 UserId=2;		// user id
 	}
 }
