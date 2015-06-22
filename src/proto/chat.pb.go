@@ -82,10 +82,11 @@ func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
 type Chat_Message struct {
-	Type Chat_MessageType `protobuf:"varint,1,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
-	From int32            `protobuf:"varint,2,opt" json:"From,omitempty"`
-	To   int32            `protobuf:"varint,3,opt" json:"To,omitempty"`
-	Body []byte           `protobuf:"bytes,4,opt,proto3" json:"Body,omitempty"`
+	Type     Chat_MessageType `protobuf:"varint,1,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
+	FromId   int32            `protobuf:"varint,2,opt" json:"FromId,omitempty"`
+	ToId     int32            `protobuf:"varint,3,opt" json:"ToId,omitempty"`
+	FromName string           `protobuf:"bytes,4,opt" json:"FromName,omitempty"`
+	Body     []byte           `protobuf:"bytes,15,opt,proto3" json:"Body,omitempty"`
 }
 
 func (m *Chat_Message) Reset()         { *m = Chat_Message{} }

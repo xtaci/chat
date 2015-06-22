@@ -21,9 +21,10 @@ message Chat {
 	}
 	message Message {
 		MessageType Type=1;
-		int32 From=2;	
-		int32 To=3;
-		bytes Body=4;
+		int32 FromId=2;	
+		int32 ToId=3;
+		string FromName=4;
+		bytes Body=15;
 	}
 	enum PubSub {
 		SUBSCRIBE=0;
