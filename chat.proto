@@ -4,9 +4,10 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Subscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订消息
+	rpc Subscribe(Chat.Id) returns (stream Chat.Message);  // 订阅/退订消息
+	rpc MucSubscribe(Chat.Id) returns (stream Chat.Message);  // 订阅/退订消息
 	rpc Send(Chat.Message) returns (Chat.Nil);	// 发送消息
-	rpc Reg(Chat.Id) returns (Chat.Nil);		// 注册一个聊天Id
+	rpc Reg(Chat.RegParam) returns (Chat.Nil);		// 注册一个聊天Id
 }
 
 message Chat {
@@ -22,18 +23,11 @@ message Chat {
 		string FromName=4;
 		bytes Body=15;
 	}
-	enum PubSub {
-		SUBSCRIBE=0;
-		UNSUBSCRIBE=1;
+	message Id{
+		int32 Id=1;	
 	}
-	message Param{
-		PubSub PS=1;
-		MessageType MT=2;
-		int32 Uid=3;	
-		int32 MucId=4;
-	}
-	message Id {
-		int32 Id=1;
-		MessageType MT=2;
+	message RegParam {
+		MessageType MT=1;
+		int32 Id=2;
 	}
 }

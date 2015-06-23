@@ -4,7 +4,6 @@ import (
 	"errors"
 	log "github.com/GameGophers/libs/nsq-logger"
 	"golang.org/x/net/context"
-	"io"
 	"sync"
 )
 
@@ -77,40 +76,49 @@ func (s *server) init() {
 	s.mucs = make(map[int32]*EndPoint)
 }
 
-func (s *server) Subscribe(stream ChatService_SubscribeServer) error {
+func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
+	die := make(chan bool)
 	f := func(msg *Chat_Message) {
-		stream.Send(msg)
+		if err := stream.Send(msg); err != nil {
+			close(die)
+		}
 	}
 
+	ep := s.read_user(p.Id)
+	if ep == nil {
+		log.Errorf("cannot find endpoint %v", p)
+		return ERROR_NOT_EXISTS
+	}
+
+	ep.ps.Sub(f)
 	defer func() {
-		// TODO : unsubscribe this line
+		ep.ps.Leave(f)
 	}()
 
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			return nil
-		}
+	<-die
+	return nil
+}
 
-		var ep *EndPoint
-		switch in.MT {
-		case Chat_CHAT:
-			ep = s.read_user(in.Uid)
-		case Chat_MUC:
-			ep = s.read_muc(in.MucId)
-		}
-		if ep == nil {
-			log.Errorf("cannot find endpoint %v", in)
-			continue
-		}
-
-		switch in.PS {
-		case Chat_SUBSCRIBE:
-			ep.ps.Sub(f)
-		case Chat_UNSUBSCRIBE:
-			ep.ps.Leave(f)
+func (s *server) MucSubscribe(p *Chat_Id, stream ChatService_MucSubscribeServer) error {
+	die := make(chan bool)
+	f := func(msg *Chat_Message) {
+		if err := stream.Send(msg); err != nil {
+			close(die)
 		}
 	}
+
+	ep := s.read_muc(p.Id)
+	if ep == nil {
+		log.Errorf("cannot find endpoint %v", p)
+		return ERROR_NOT_EXISTS
+	}
+
+	ep.ps.Sub(f)
+	defer func() {
+		ep.ps.Leave(f)
+	}()
+
+	<-die
 	return nil
 }
 
@@ -136,7 +144,7 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 	return OK, nil
 }
 
-func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
+func (s *server) Reg(ctx context.Context, req *Chat_RegParam) (*Chat_Nil, error) {
 	switch req.MT {
 	case Chat_CHAT:
 		if err := s.register_chat(req); err != nil {
@@ -153,7 +161,7 @@ func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
 	}
 }
 
-func (s *server) register_chat(req *Chat_Id) error {
+func (s *server) register_chat(req *Chat_RegParam) error {
 	s.user_lock.Lock()
 	defer s.user_lock.Lock()
 	user := s.users[req.Id]
@@ -166,7 +174,7 @@ func (s *server) register_chat(req *Chat_Id) error {
 	return nil
 }
 
-func (s *server) register_muc(req *Chat_Id) error {
+func (s *server) register_muc(req *Chat_RegParam) error {
 	s.mucs_lock.Lock()
 	defer s.mucs_lock.Lock()
 	m := s.mucs[req.Id]
