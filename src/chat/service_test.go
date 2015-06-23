@@ -31,8 +31,9 @@ func TestChat(t *testing.T) {
 	const COUNT = 10
 	go recv(&Chat_Id{1}, COUNT, t)
 	go recv(&Chat_Id{1}, COUNT, t)
+	time.Sleep(3 * time.Second)
 	go send(&Chat_Message{Id: 1, Body: []byte("Hello")}, COUNT, t)
-	time.Sleep(10 * time.Second)
+	time.Sleep(3 * time.Second)
 }
 
 func send(m *Chat_Message, count int, t *testing.T) {
@@ -50,6 +51,7 @@ func send(m *Chat_Message, count int, t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Log("send:", m)
 		count--
 	}
 }
@@ -73,6 +75,7 @@ func recv(chat_id *Chat_Id, count int, t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		println("recv:", count)
 		t.Log("recv:", message)
 		count--
 	}

@@ -74,12 +74,13 @@ func (s *server) init() {
 
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
 	die := make(chan bool)
-	f := func(msg *Chat_Message) {
+	f := pubsub.NewFunc(func(msg *Chat_Message) {
 		if err := stream.Send(msg); err != nil {
 			close(die)
 		}
-		log.Infof("send msg: %#v", *msg)
-	}
+	})
+
+	log.Tracef("new subscriber: %p", f)
 
 	ep := s.read_ep(p.Id)
 	if ep == nil {
