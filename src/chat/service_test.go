@@ -3,18 +3,14 @@ package main
 import (
 	. "proto"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sync"
 )
 
 const (
 	address = "localhost:50008"
-)
-
-var (
-	wg sync.WaitGroup
 )
 
 func TestChat(t *testing.T) {
@@ -33,11 +29,10 @@ func TestChat(t *testing.T) {
 	}
 
 	const COUNT = 10
-	wg.Add(3)
 	go recv(&Chat_Id{1}, COUNT, t)
 	go recv(&Chat_Id{1}, COUNT, t)
 	go send(&Chat_Message{Id: 1, Body: []byte("Hello")}, COUNT, t)
-	wg.Wait()
+	time.Sleep(10 * time.Second)
 }
 
 func send(m *Chat_Message, count int, t *testing.T) {
@@ -49,13 +44,13 @@ func send(m *Chat_Message, count int, t *testing.T) {
 	c := NewChatServiceClient(conn)
 	for {
 		if count == 0 {
-			wg.Done()
 			return
 		}
 		_, err := c.Send(context.Background(), m)
 		if err != nil {
 			t.Fatal(err)
 		}
+		println("send:", m)
 		t.Log("send:", m)
 		count--
 	}
@@ -74,13 +69,13 @@ func recv(chat_id *Chat_Id, count int, t *testing.T) {
 	}
 	for {
 		if count == 0 {
-			wg.Done()
 			return
 		}
 		message, err := stream.Recv()
 		if err != nil {
 			t.Fatal(err)
 		}
+		println("recv:", message)
 		t.Log("recv:", message)
 		count--
 	}
