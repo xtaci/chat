@@ -94,9 +94,10 @@ func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Message) ProtoMessage()    {}
 
 type Chat_Param struct {
-	PS    Chat_PubSub `protobuf:"varint,1,opt,enum=proto.Chat_PubSub" json:"PS,omitempty"`
-	Uid   int32       `protobuf:"varint,2,opt" json:"Uid,omitempty"`
-	MucId int32       `protobuf:"varint,3,opt" json:"MucId,omitempty"`
+	PS    Chat_PubSub      `protobuf:"varint,1,opt,enum=proto.Chat_PubSub" json:"PS,omitempty"`
+	MT    Chat_MessageType `protobuf:"varint,2,opt,enum=proto.Chat_MessageType" json:"MT,omitempty"`
+	Uid   int32            `protobuf:"varint,3,opt" json:"Uid,omitempty"`
+	MucId int32            `protobuf:"varint,4,opt" json:"MucId,omitempty"`
 }
 
 func (m *Chat_Param) Reset()         { *m = Chat_Param{} }
@@ -104,21 +105,13 @@ func (m *Chat_Param) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Param) ProtoMessage()    {}
 
 type Chat_Id struct {
-	Id int32 `protobuf:"varint,1,opt" json:"Id,omitempty"`
+	Id int32            `protobuf:"varint,1,opt" json:"Id,omitempty"`
+	MT Chat_MessageType `protobuf:"varint,2,opt,enum=proto.Chat_MessageType" json:"MT,omitempty"`
 }
 
 func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
 func (m *Chat_Id) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Id) ProtoMessage()    {}
-
-type Chat_MucReq struct {
-	MucId  int32 `protobuf:"varint,1,opt" json:"MucId,omitempty"`
-	UserId int32 `protobuf:"varint,2,opt" json:"UserId,omitempty"`
-}
-
-func (m *Chat_MucReq) Reset()         { *m = Chat_MucReq{} }
-func (m *Chat_MucReq) String() string { return proto1.CompactTextString(m) }
-func (*Chat_MucReq) ProtoMessage()    {}
 
 func init() {
 	proto1.RegisterEnum("proto.Chat_MessageType", Chat_MessageType_name, Chat_MessageType_value)
@@ -129,10 +122,8 @@ func init() {
 
 type ChatServiceClient interface {
 	Subscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
-	MucSubscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error)
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
 	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
-	RegMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
 
 type chatServiceClient struct {
@@ -174,37 +165,6 @@ func (x *chatServiceSubscribeClient) Recv() (*Chat_Message, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) MucSubscribe(ctx context.Context, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[1], c.cc, "/proto.ChatService/MucSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &chatServiceMucSubscribeClient{stream}
-	return x, nil
-}
-
-type ChatService_MucSubscribeClient interface {
-	Send(*Chat_Param) error
-	Recv() (*Chat_Message, error)
-	grpc.ClientStream
-}
-
-type chatServiceMucSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *chatServiceMucSubscribeClient) Send(m *Chat_Param) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *chatServiceMucSubscribeClient) Recv() (*Chat_Message, error) {
-	m := new(Chat_Message)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
@@ -223,23 +183,12 @@ func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.C
 	return out, nil
 }
 
-func (c *chatServiceClient) RegMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/RegMuc", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for ChatService service
 
 type ChatServiceServer interface {
 	Subscribe(ChatService_SubscribeServer) error
-	MucSubscribe(ChatService_MucSubscribeServer) error
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
 	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
-	RegMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
@@ -272,32 +221,6 @@ func (x *chatServiceSubscribeServer) Recv() (*Chat_Param, error) {
 	return m, nil
 }
 
-func _ChatService_MucSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ChatServiceServer).MucSubscribe(&chatServiceMucSubscribeServer{stream})
-}
-
-type ChatService_MucSubscribeServer interface {
-	Send(*Chat_Message) error
-	Recv() (*Chat_Param, error)
-	grpc.ServerStream
-}
-
-type chatServiceMucSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *chatServiceMucSubscribeServer) Send(m *Chat_Message) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *chatServiceMucSubscribeServer) Recv() (*Chat_Param, error) {
-	m := new(Chat_Param)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
 	in := new(Chat_Message)
 	if err := codec.Unmarshal(buf, in); err != nil {
@@ -322,18 +245,6 @@ func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, codec grpc.C
 	return out, nil
 }
 
-func _ChatService_RegMuc_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_MucReq)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ChatServiceServer).RegMuc(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _ChatService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
@@ -346,21 +257,11 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "Reg",
 			Handler:    _ChatService_Reg_Handler,
 		},
-		{
-			MethodName: "RegMuc",
-			Handler:    _ChatService_RegMuc_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Subscribe",
 			Handler:       _ChatService_Subscribe_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "MucSubscribe",
-			Handler:       _ChatService_MucSubscribe_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

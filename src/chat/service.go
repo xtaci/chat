@@ -33,7 +33,7 @@ var (
 
 type EndPoint struct {
 	Inbox []Chat_Message
-	PS    *pubsub.PubSub
+	ps    *pubsub.PubSub
 	sync.Mutex
 }
 
@@ -49,7 +49,7 @@ func (ep *EndPoint) Push(msg *Chat_Message) {
 
 func NewEndPoint() *EndPoint {
 	u := &EndPoint{}
-	u.PS = pubsub.New()
+	u.ps = pubsub.New()
 	return u
 }
 
@@ -92,101 +92,89 @@ func (s *server) Subscribe(stream ChatService_SubscribeServer) error {
 			return nil
 		}
 
-		switch in.PS {
-		case Chat_SUBSCRIBE:
-			if user := s.read_user(in.Uid); user != nil {
-				user.PS.Sub(f)
-			} else {
-				log.Errorf("subscribe to unknown uid:%v", in.Uid)
-			}
-		case Chat_UNSUBSCRIBE:
-			if user := s.read_user(in.Uid); user != nil {
-				user.PS.Leave(f)
-			} else {
-				log.Errorf("un-subscribe to unknown uid:%v", in.Uid)
-			}
+		var ep *EndPoint
+		switch in.MT {
+		case Chat_CHAT:
+			ep = s.read_user(in.Uid)
+		case Chat_MUC:
+			ep = s.read_muc(in.MucId)
 		}
-	}
-	return nil
-}
-
-func (s *server) MucSubscribe(stream ChatService_MucSubscribeServer) error {
-	f := func(msg *Chat_Message) {
-		stream.Send(msg)
-	}
-
-	defer func() {
-		// TODO : unsubscribe this line
-	}()
-
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			return nil
+		if ep == nil {
+			log.Errorf("cannot find endpoint %v", in)
+			continue
 		}
 
 		switch in.PS {
 		case Chat_SUBSCRIBE:
-			if muc := s.read_muc(in.MucId); muc != nil {
-				muc.PS.Sub(f)
-			} else {
-				log.Errorf("muc subscribe to unknown mucid:%v", in.MucId)
-			}
+			ep.ps.Sub(f)
 		case Chat_UNSUBSCRIBE:
-			if muc := s.read_muc(in.MucId); muc != nil {
-				muc.PS.Leave(f)
-			} else {
-				log.Errorf("muc un-subscribe to unknown mucid:%v", in.MucId)
-			}
+			ep.ps.Leave(f)
 		}
 	}
 	return nil
 }
 
 func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error) {
+	var ep *EndPoint
 	switch msg.Type {
 	case Chat_CHAT:
-		if user := s.read_user(msg.ToId); user != nil {
-			user.PS.Pub(msg)
-			user.Lock()
-			defer user.Lock()
-			user.Push(msg)
-		}
+		ep = s.read_user(msg.ToId)
 	case Chat_MUC:
-		if muc := s.read_muc(msg.ToId); muc != nil {
-			muc.PS.Pub(msg)
-			muc.Lock()
-			defer muc.Lock()
-			muc.Push(msg)
-		}
+		ep = s.read_muc(msg.ToId)
 	default:
 		return nil, ERROR_BAD_MESSAGE_TYPE
 	}
+
+	if ep == nil {
+		return nil, ERROR_NOT_EXISTS
+	}
+
+	ep.ps.Pub(msg)
+	ep.Lock()
+	defer ep.Lock()
+	ep.Push(msg)
 	return OK, nil
 }
 
 func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
+	switch req.MT {
+	case Chat_CHAT:
+		if err := s.register_chat(req); err != nil {
+			return nil, err
+		}
+		return OK, nil
+	case Chat_MUC:
+		if err := s.register_muc(req); err != nil {
+			return nil, err
+		}
+		return OK, nil
+	default:
+		return nil, ERROR_BAD_MESSAGE_TYPE
+	}
+}
+
+func (s *server) register_chat(req *Chat_Id) error {
 	s.user_lock.Lock()
 	defer s.user_lock.Lock()
 	user := s.users[req.Id]
 	if user != nil {
 		log.Errorf("id already exists:%v", req.Id)
-		return nil, ERROR_ALREADY_EXISTS
+		return ERROR_ALREADY_EXISTS
 	}
 
 	s.users[req.Id] = NewEndPoint()
-	return OK, nil
+	return nil
 }
 
-func (s *server) RegMuc(ctx context.Context, req *Chat_MucReq) (*Chat_Nil, error) {
+func (s *server) register_muc(req *Chat_Id) error {
 	s.mucs_lock.Lock()
 	defer s.mucs_lock.Lock()
-	m := s.mucs[req.MucId]
+	m := s.mucs[req.Id]
 	if m != nil {
-		log.Errorf("mucid already exists:%v", req.MucId)
-		return nil, ERROR_ALREADY_EXISTS
+		log.Errorf("mucid already exists:%v", req.Id)
+		return ERROR_ALREADY_EXISTS
 	}
 
-	s.mucs[req.MucId] = NewEndPoint()
-	return OK, nil
+	s.mucs[req.Id] = NewEndPoint()
+	return nil
 }
