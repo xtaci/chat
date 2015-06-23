@@ -17,17 +17,15 @@ const (
 )
 
 const (
-	BOLTDB_FILE        = "/data/CHAT.DAT"
-	BOLTDB_USER_BUCKET = "USER"
-	BOLTDB_MUC_BUCKET  = "MUC"
-	MAX_QUEUE_SIZE     = 128 // num of message kept
+	BOLTDB_FILE    = "/data/CHAT.DAT"
+	BOLTDB_BUCKET  = "EPS"
+	MAX_QUEUE_SIZE = 128 // num of message kept
 )
 
 var (
-	OK                     = &Chat_Nil{}
-	ERROR_BAD_MESSAGE_TYPE = errors.New("bad message type")
-	ERROR_ALREADY_EXISTS   = errors.New("id already exists")
-	ERROR_NOT_EXISTS       = errors.New("id not exists")
+	OK                   = &Chat_Nil{}
+	ERROR_ALREADY_EXISTS = errors.New("id already exists")
+	ERROR_NOT_EXISTS     = errors.New("id not exists")
 )
 
 type EndPoint struct {
