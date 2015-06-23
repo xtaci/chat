@@ -129,7 +129,7 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 
 func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
 	s.Lock()
-	defer s.Lock()
+	defer s.Unlock()
 	ep := s.eps[p.Id]
 	if ep != nil {
 		log.Errorf("id already exists:%v", p.Id)
