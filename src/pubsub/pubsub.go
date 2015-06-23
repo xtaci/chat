@@ -15,7 +15,7 @@ To publish:
 The message are allowed to pass any types, and passing to subscribers which
 can accept the type for the argument of callback.
 */
-package main
+package pubsub
 
 import (
 	"errors"
