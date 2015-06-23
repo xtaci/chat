@@ -7,7 +7,7 @@ service ChatService {
 	rpc Subscribe(Chat.Id) returns (stream Chat.Message); // 订阅消息
 	rpc Read(Chat.Id) returns (stream Chat.Message); // 读取消息箱
 	rpc Send(Chat.Message) returns (Chat.Nil); // 发送消息
-	rpc Reg(Chat.Id) returns (Chat.Nil); // 注册一个聊天Id
+	rpc Reg(Chat.Id) returns (Chat.Nil); // 注册一个EndPoint
 }
 
 message Chat {
