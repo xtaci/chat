@@ -47,9 +47,7 @@ func (ep *EndPoint) Push(msg *Chat_Message) {
 func (ep *EndPoint) Read() []Chat_Message {
 	ep.Lock()
 	defer ep.Unlock()
-	ret := make([]Chat_Message, len(ep.Inbox))
-	copy(ret, ep.Inbox)
-	return ret
+	return append([]Chat_Message(nil), ep.Inbox...)
 }
 
 func NewEndPoint() *EndPoint {
