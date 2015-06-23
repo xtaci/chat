@@ -4,7 +4,7 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Subscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订个人消息
+	rpc Subscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订消息
 	rpc MucSubscribe(stream Chat.Param) returns (stream Chat.Message);  // 订阅/退订MUC消息
 	rpc Send(Chat.Message) returns (Chat.Nil);	// 发送消息
 	rpc Reg(Chat.Id) returns (Chat.Nil);	// 注册一个聊天用户

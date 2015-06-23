@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"golang.org/x/net/context"
+	"io"
 	"sync"
 )
 
@@ -20,23 +22,38 @@ const (
 	MAX_QUEUE_SIZE     = 128 // num of message kept
 )
 
+var (
+	ERROR_BAD_MESSAGE_TYPE = errors.New("bad message type")
+)
+
 type User struct {
 	Inbox []Chat_Message
+	PS    *PubSub
 }
 
 type Muc struct {
 	UserIds []int32
 	Inbox   []Chat_Message
+	PS      *PubSub
 }
 
 type server struct {
-	users          map[int32]*User
-	mucs           map[int32]*Muc
-	chat_chan      chan Chat_Message
-	chat_chan_ctrl chan Chat_Param
-	muc_chan       chan Chat_Message
-	muc_chan_ctrl  chan Chat_Param
-	sync.RWMutex
+	users     map[int32]*User
+	mucs      map[int32]*Muc
+	user_lock sync.RWMutex
+	mucs_lock sync.RWMutex
+}
+
+func (s *server) read_user(id int32) *User {
+	s.user_lock.RLock()
+	defer s.user_lock.RUnlock()
+	return s.users[id]
+}
+
+func (s *server) read_muc(mucid int32) *Muc {
+	s.mucs_lock.RLock()
+	defer s.mucs_lock.RUnlock()
+	return s.mucs[mucid]
 }
 
 func (s *server) init() {
@@ -45,26 +62,26 @@ func (s *server) init() {
 }
 
 func (s *server) Subscribe(stream ChatService_SubscribeServer) error {
-	die := make(chan bool)
-	defer close(die)
-
-	go func() {
-		for {
-			select {
-			case msg <- s.chat_chan:
-			case ctrl <- s.chat_chan_ctrl:
-			case <-die:
-				return
-			}
-		}
-	}()
+	f := func(msg *Chat_Message) {
+		stream.Send(msg)
+	}
 
 	for {
 		in, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
-		s.chat_chan_ctrl <- in
+
+		switch in.PS {
+		case Chat_SUBSCRIBE:
+			if user := s.read_user(in.Uid); user != nil {
+				user.PS.Sub(f)
+			}
+		case Chat_UNSUBSCRIBE:
+			if user := s.read_user(in.Uid); user != nil {
+				user.PS.Leave(f)
+			}
+		}
 	}
 	return nil
 }
@@ -76,22 +93,22 @@ func (s *server) MucSubscribe(stream ChatService_MucSubscribeServer) error {
 func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error) {
 	switch msg.Type {
 	case Chat_CHAT:
-		if u := s.users[msg.ToId]; u != nil {
-			u.Inbox = append(u.Inbox, *msg)
+		if user := s.read_user(msg.ToId); user != nil {
+			user.PS.Pub(msg)
 		}
-		s.chat_chan <- *msg
 	case Chat_MUC:
-		if u := s.mucs[msg.ToId]; u != nil {
-			u.Inbox = append(u.Inbox, *msg)
+		if muc := s.read_muc(msg.ToId); muc != nil {
+			muc.PS.Pub(msg)
 		}
-		s.muc_chan <- *msg
+	default:
+		return nil, ERROR_BAD_MESSAGE_TYPE
 	}
 	return nil, nil
 }
 
 func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
-	s.Lock()
-	defer s.Unlock()
+	s.user_lock.Lock()
+	defer s.user_lock.Unlock()
 	return nil, nil
 }
 
