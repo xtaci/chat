@@ -37,6 +37,16 @@ type User struct {
 	sync.Mutex
 }
 
+func (u *User) Push(msg *Chat_Message) {
+	u.Lock()
+	defer u.Unlock()
+	if len(u.Inbox) > MAX_QUEUE_SIZE {
+		u.Inbox = append(u.Inbox[1:], *msg)
+	} else {
+		u.Inbox = append(u.Inbox, *msg)
+	}
+}
+
 func NewUser() *User {
 	u := &User{}
 	u.PS = pubsub.New()
@@ -48,6 +58,16 @@ type Muc struct {
 	Inbox   []Chat_Message
 	PS      *pubsub.PubSub
 	sync.Mutex
+}
+
+func (m *Muc) Push(msg *Chat_Message) {
+	m.Lock()
+	defer m.Unlock()
+	if len(m.Inbox) > MAX_QUEUE_SIZE {
+		m.Inbox = append(m.Inbox[1:], *msg)
+	} else {
+		m.Inbox = append(m.Inbox, *msg)
+	}
 }
 
 func NewMuc() *Muc {
@@ -151,10 +171,16 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 	case Chat_CHAT:
 		if user := s.read_user(msg.ToId); user != nil {
 			user.PS.Pub(msg)
+			user.Lock()
+			defer user.Lock()
+			user.Push(msg)
 		}
 	case Chat_MUC:
 		if muc := s.read_muc(msg.ToId); muc != nil {
 			muc.PS.Pub(msg)
+			muc.Lock()
+			defer muc.Lock()
+			muc.Push(msg)
 		}
 	default:
 		return nil, ERROR_BAD_MESSAGE_TYPE
