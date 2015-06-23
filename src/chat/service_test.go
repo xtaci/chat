@@ -50,8 +50,6 @@ func send(m *Chat_Message, count int, t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		println("send:", m)
-		t.Log("send:", m)
 		count--
 	}
 }
@@ -75,7 +73,6 @@ func recv(chat_id *Chat_Id, count int, t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		println("recv:", message)
 		t.Log("recv:", message)
 		count--
 	}
