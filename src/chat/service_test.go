@@ -1,10 +1,13 @@
 package main
 
 import (
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
+	"log"
 	. "proto"
 	"testing"
+	"time"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -23,25 +26,47 @@ func TestChat(t *testing.T) {
 	// Contact the server and print out its response.
 	_, err = c.Reg(context.Background(), &Chat_Id{Id: 1})
 	if err != nil {
-		t.Logf("could not query: %v", err)
+		log.Printf("could not query: %v", err)
 	}
 
-	stream, err := c.Subscribe(context.Background(), &Chat_Id{Id: 1})
+	go send(&Chat_Message{Id: 1, Body: []byte("Hello")})
+	go recv(&Chat_Id{1})
+}
+
+func send(m *Chat_Message) {
+	conn, err := grpc.Dial(address)
 	if err != nil {
-		t.Fatal(err)
+		log.Fatalf("did not connect: %v", err)
 	}
-
-	go func() {
-		_, err = c.Send(context.Background(), &Chat_Message{Id: 1, Body: []byte("hello world")})
-		t.Log("sent")
+	defer conn.Close()
+	c := NewChatServiceClient(conn)
+	for {
+		_, err := c.Send(context.Background(), m)
 		if err != nil {
-			t.Fatal(err)
+			log.Printf("send err : %v", err)
 		}
-	}()
-
-	message, err := stream.Recv()
-	if err != nil {
-		t.Fatal(err)
+		log.Printf("send msg: %v", m)
+		time.Sleep(3 * time.Second)
 	}
-	t.Log(message)
+}
+
+func recv(chat_id *Chat_Id) {
+	conn, err := grpc.Dial(address)
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := NewChatServiceClient(conn)
+	stream, err := c.Subscribe(context.Background(), chat_id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for {
+		message, err := stream.Recv()
+		if err != nil {
+			log.Printf("recv err :%v", err)
+		}
+		log.Print(message)
+	}
+	log.Printf("recv msg end")
 }

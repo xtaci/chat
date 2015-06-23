@@ -2,9 +2,10 @@ package main
 
 import (
 	"errors"
+	"sync"
+
 	log "github.com/GameGophers/libs/nsq-logger"
 	"golang.org/x/net/context"
-	"sync"
 )
 
 import (
@@ -77,6 +78,7 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 		if err := stream.Send(msg); err != nil {
 			close(die)
 		}
+		log.Infof("send msg: %#v", *msg)
 	}
 
 	ep := s.read_ep(p.Id)
