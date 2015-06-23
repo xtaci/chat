@@ -41,12 +41,12 @@ func (pse *PubSubError) Subscriber() interface{} {
 	return pse.f
 }
 
-type FuncWrap struct {
+type wrap struct {
 	f interface{}
 }
 
-func NewFunc(f interface{}) *FuncWrap {
-	w := &FuncWrap{}
+func NewFunc(f interface{}) *wrap {
+	w := &wrap{}
 	w.f = f
 	return w
 }
@@ -54,7 +54,7 @@ func NewFunc(f interface{}) *FuncWrap {
 // PubSub contains channel and callbacks.
 type PubSub struct {
 	c chan interface{}
-	w []*FuncWrap
+	w []*wrap
 	m sync.Mutex
 	e chan error
 }
@@ -92,7 +92,7 @@ func (ps *PubSub) Error() chan error {
 }
 
 // Sub subscribe to the PubSub.
-func (ps *PubSub) Sub(w *FuncWrap) error {
+func (ps *PubSub) Sub(w *wrap) error {
 	f := w.f
 	rf := reflect.ValueOf(f)
 	if rf.Kind() != reflect.Func {
@@ -108,7 +108,7 @@ func (ps *PubSub) Sub(w *FuncWrap) error {
 }
 
 // Leave unsubscribe to the PubSub.
-func (ps *PubSub) Leave(w *FuncWrap) {
+func (ps *PubSub) Leave(w *wrap) {
 	ps.m.Lock()
 	defer ps.m.Unlock()
 	for k, v := range ps.w {
