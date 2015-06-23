@@ -29,7 +29,7 @@ var (
 )
 
 type EndPoint struct {
-	Inbox []Chat_Message
+	inbox []Chat_Message
 	ps    *pubsub.PubSub
 	sync.Mutex
 }
@@ -37,17 +37,17 @@ type EndPoint struct {
 func (ep *EndPoint) Push(msg *Chat_Message) {
 	ep.Lock()
 	defer ep.Unlock()
-	if len(ep.Inbox) > MAX_QUEUE_SIZE {
-		ep.Inbox = append(ep.Inbox[1:], *msg)
+	if len(ep.inbox) > MAX_QUEUE_SIZE {
+		ep.inbox = append(ep.inbox[1:], *msg)
 	} else {
-		ep.Inbox = append(ep.Inbox, *msg)
+		ep.inbox = append(ep.inbox, *msg)
 	}
 }
 
 func (ep *EndPoint) Read() []Chat_Message {
 	ep.Lock()
 	defer ep.Unlock()
-	return append([]Chat_Message(nil), ep.Inbox...)
+	return append([]Chat_Message(nil), ep.inbox...)
 }
 
 func NewEndPoint() *EndPoint {
