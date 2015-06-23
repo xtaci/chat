@@ -133,8 +133,6 @@ type ChatServiceClient interface {
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
 	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 	RegMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
-	JoinMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
-	LeaveMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
 
 type chatServiceClient struct {
@@ -234,24 +232,6 @@ func (c *chatServiceClient) RegMuc(ctx context.Context, in *Chat_MucReq, opts ..
 	return out, nil
 }
 
-func (c *chatServiceClient) JoinMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/JoinMuc", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *chatServiceClient) LeaveMuc(ctx context.Context, in *Chat_MucReq, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/LeaveMuc", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for ChatService service
 
 type ChatServiceServer interface {
@@ -260,8 +240,6 @@ type ChatServiceServer interface {
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
 	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
 	RegMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
-	JoinMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
-	LeaveMuc(context.Context, *Chat_MucReq) (*Chat_Nil, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
@@ -356,30 +334,6 @@ func _ChatService_RegMuc_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
-func _ChatService_JoinMuc_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_MucReq)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ChatServiceServer).JoinMuc(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _ChatService_LeaveMuc_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_MucReq)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ChatServiceServer).LeaveMuc(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _ChatService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
@@ -395,14 +349,6 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegMuc",
 			Handler:    _ChatService_RegMuc_Handler,
-		},
-		{
-			MethodName: "JoinMuc",
-			Handler:    _ChatService_JoinMuc_Handler,
-		},
-		{
-			MethodName: "LeaveMuc",
-			Handler:    _ChatService_LeaveMuc_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

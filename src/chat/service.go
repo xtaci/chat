@@ -31,73 +31,50 @@ var (
 	ERROR_NOT_EXISTS       = errors.New("id not exists")
 )
 
-type User struct {
+type EndPoint struct {
 	Inbox []Chat_Message
 	PS    *pubsub.PubSub
 	sync.Mutex
 }
 
-func (u *User) Push(msg *Chat_Message) {
-	u.Lock()
-	defer u.Unlock()
-	if len(u.Inbox) > MAX_QUEUE_SIZE {
-		u.Inbox = append(u.Inbox[1:], *msg)
+func (ep *EndPoint) Push(msg *Chat_Message) {
+	ep.Lock()
+	defer ep.Unlock()
+	if len(ep.Inbox) > MAX_QUEUE_SIZE {
+		ep.Inbox = append(ep.Inbox[1:], *msg)
 	} else {
-		u.Inbox = append(u.Inbox, *msg)
+		ep.Inbox = append(ep.Inbox, *msg)
 	}
 }
 
-func NewUser() *User {
-	u := &User{}
+func NewEndPoint() *EndPoint {
+	u := &EndPoint{}
 	u.PS = pubsub.New()
 	return u
 }
 
-type Muc struct {
-	UserIds []int32
-	Inbox   []Chat_Message
-	PS      *pubsub.PubSub
-	sync.Mutex
-}
-
-func (m *Muc) Push(msg *Chat_Message) {
-	m.Lock()
-	defer m.Unlock()
-	if len(m.Inbox) > MAX_QUEUE_SIZE {
-		m.Inbox = append(m.Inbox[1:], *msg)
-	} else {
-		m.Inbox = append(m.Inbox, *msg)
-	}
-}
-
-func NewMuc() *Muc {
-	m := &Muc{}
-	m.PS = pubsub.New()
-	return m
-}
-
 type server struct {
-	users     map[int32]*User
-	mucs      map[int32]*Muc
+	users     map[int32]*EndPoint
+	mucs      map[int32]*EndPoint
 	user_lock sync.RWMutex
 	mucs_lock sync.RWMutex
 }
 
-func (s *server) read_user(id int32) *User {
+func (s *server) read_user(id int32) *EndPoint {
 	s.user_lock.RLock()
 	defer s.user_lock.RUnlock()
 	return s.users[id]
 }
 
-func (s *server) read_muc(mucid int32) *Muc {
+func (s *server) read_muc(mucid int32) *EndPoint {
 	s.mucs_lock.RLock()
 	defer s.mucs_lock.RUnlock()
 	return s.mucs[mucid]
 }
 
 func (s *server) init() {
-	s.users = make(map[int32]*User)
-	s.mucs = make(map[int32]*Muc)
+	s.users = make(map[int32]*EndPoint)
+	s.mucs = make(map[int32]*EndPoint)
 }
 
 func (s *server) Subscribe(stream ChatService_SubscribeServer) error {
@@ -197,7 +174,7 @@ func (s *server) Reg(ctx context.Context, req *Chat_Id) (*Chat_Nil, error) {
 		return nil, ERROR_ALREADY_EXISTS
 	}
 
-	s.users[req.Id] = NewUser()
+	s.users[req.Id] = NewEndPoint()
 	return OK, nil
 }
 
@@ -210,48 +187,6 @@ func (s *server) RegMuc(ctx context.Context, req *Chat_MucReq) (*Chat_Nil, error
 		return nil, ERROR_ALREADY_EXISTS
 	}
 
-	s.mucs[req.MucId] = NewMuc()
+	s.mucs[req.MucId] = NewEndPoint()
 	return OK, nil
-}
-
-func (s *server) JoinMuc(ctx context.Context, req *Chat_MucReq) (*Chat_Nil, error) {
-	s.mucs_lock.Lock()
-	defer s.mucs_lock.Lock()
-	m := s.mucs[req.MucId]
-	if m == nil {
-		log.Errorf("mucid not exists:%v", req.MucId)
-		return nil, ERROR_NOT_EXISTS
-	}
-
-	m.Lock()
-	defer m.Unlock()
-	for _, id := range m.UserIds {
-		if id == req.UserId {
-			return nil, ERROR_ALREADY_EXISTS
-		}
-	}
-
-	m.UserIds = append(m.UserIds, req.UserId)
-	return OK, nil
-}
-
-func (s *server) LeaveMuc(ctx context.Context, req *Chat_MucReq) (*Chat_Nil, error) {
-	s.mucs_lock.Lock()
-	defer s.mucs_lock.Lock()
-	m := s.mucs[req.MucId]
-	if m == nil {
-		log.Errorf("mucid not exists:%v", req.MucId)
-		return nil, ERROR_NOT_EXISTS
-	}
-
-	m.Lock()
-	defer m.Unlock()
-	for k := range m.UserIds {
-		if m.UserIds[k] == req.UserId {
-			m.UserIds = append(m.UserIds[:k], m.UserIds[k+1:]...)
-			return OK, nil
-		}
-	}
-
-	return nil, ERROR_NOT_EXISTS
 }
