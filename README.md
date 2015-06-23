@@ -1,2 +1,2 @@
 # chat
-XMPP based chat server for game
+pub/sub based chat server
