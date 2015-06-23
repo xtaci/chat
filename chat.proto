@@ -4,30 +4,20 @@ package proto;
 
 // chat service definition
 service ChatService {
-	rpc Subscribe(Chat.Id) returns (stream Chat.Message);  // 订阅/退订消息
-	rpc MucSubscribe(Chat.Id) returns (stream Chat.Message);  // 订阅/退订消息
+	rpc Subscribe(Chat.Id) returns (stream Chat.Message);	// 订阅/退订消息
+	rpc Read(Chat.Id) returns (stream Chat.Message);		// 读取消息箱
 	rpc Send(Chat.Message) returns (Chat.Nil);	// 发送消息
-	rpc Reg(Chat.RegParam) returns (Chat.Nil);		// 注册一个聊天Id
+	rpc Reg(Chat.Id) returns (Chat.Nil);	// 注册一个聊天Id
 }
 
 message Chat {
 	message Nil { }
-	enum MessageType {
-		CHAT=0;
-		MUC=1;
-	}
 	message Message {
-		MessageType Type=1;
-		int32 FromId=2;	
-		int32 ToId=3;
-		string FromName=4;
-		bytes Body=15;
+		uint64 FromId=1;	
+		uint64 ToId=2;
+		bytes Content=3;
 	}
 	message Id{
-		int32 Id=1;	
-	}
-	message RegParam {
-		MessageType MT=1;
-		int32 Id=2;
+		uint64 Id=1;	
 	}
 }

@@ -46,6 +46,14 @@ func (ep *EndPoint) Push(msg *Chat_Message) {
 	}
 }
 
+func (ep *EndPoint) Read() []Chat_Message {
+	ep.Lock()
+	defer ep.Unlock()
+	ret := make([]Chat_Message, len(ep.Inbox))
+	copy(ret, ep.Inbox)
+	return ret
+}
+
 func NewEndPoint() *EndPoint {
 	u := &EndPoint{}
 	u.ps = pubsub.New()
@@ -53,27 +61,18 @@ func NewEndPoint() *EndPoint {
 }
 
 type server struct {
-	users     map[int32]*EndPoint
-	mucs      map[int32]*EndPoint
-	user_lock sync.RWMutex
-	mucs_lock sync.RWMutex
+	eps map[uint64]*EndPoint
+	sync.RWMutex
 }
 
-func (s *server) read_user(id int32) *EndPoint {
-	s.user_lock.RLock()
-	defer s.user_lock.RUnlock()
-	return s.users[id]
-}
-
-func (s *server) read_muc(mucid int32) *EndPoint {
-	s.mucs_lock.RLock()
-	defer s.mucs_lock.RUnlock()
-	return s.mucs[mucid]
+func (s *server) read_ep(id uint64) *EndPoint {
+	s.RLock()
+	defer s.RUnlock()
+	return s.eps[id]
 }
 
 func (s *server) init() {
-	s.users = make(map[int32]*EndPoint)
-	s.mucs = make(map[int32]*EndPoint)
+	s.eps = make(map[uint64]*EndPoint)
 }
 
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
@@ -84,7 +83,7 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 		}
 	}
 
-	ep := s.read_user(p.Id)
+	ep := s.read_ep(p.Id)
 	if ep == nil {
 		log.Errorf("cannot find endpoint %v", p)
 		return ERROR_NOT_EXISTS
@@ -99,40 +98,24 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 	return nil
 }
 
-func (s *server) MucSubscribe(p *Chat_Id, stream ChatService_MucSubscribeServer) error {
-	die := make(chan bool)
-	f := func(msg *Chat_Message) {
-		if err := stream.Send(msg); err != nil {
-			close(die)
-		}
-	}
-
-	ep := s.read_muc(p.Id)
+func (s *server) Read(p *Chat_Id, stream ChatService_ReadServer) error {
+	ep := s.read_ep(p.Id)
 	if ep == nil {
 		log.Errorf("cannot find endpoint %v", p)
 		return ERROR_NOT_EXISTS
 	}
 
-	ep.ps.Sub(f)
-	defer func() {
-		ep.ps.Leave(f)
-	}()
-
-	<-die
+	msgs := ep.Read()
+	for k := range msgs {
+		if err := stream.Send(&msgs[k]); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error) {
-	var ep *EndPoint
-	switch msg.Type {
-	case Chat_CHAT:
-		ep = s.read_user(msg.ToId)
-	case Chat_MUC:
-		ep = s.read_muc(msg.ToId)
-	default:
-		return nil, ERROR_BAD_MESSAGE_TYPE
-	}
-
+	ep := s.read_ep(msg.ToId)
 	if ep == nil {
 		return nil, ERROR_NOT_EXISTS
 	}
@@ -144,45 +127,15 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 	return OK, nil
 }
 
-func (s *server) Reg(ctx context.Context, req *Chat_RegParam) (*Chat_Nil, error) {
-	switch req.MT {
-	case Chat_CHAT:
-		if err := s.register_chat(req); err != nil {
-			return nil, err
-		}
-		return OK, nil
-	case Chat_MUC:
-		if err := s.register_muc(req); err != nil {
-			return nil, err
-		}
-		return OK, nil
-	default:
-		return nil, ERROR_BAD_MESSAGE_TYPE
-	}
-}
-
-func (s *server) register_chat(req *Chat_RegParam) error {
-	s.user_lock.Lock()
-	defer s.user_lock.Lock()
-	user := s.users[req.Id]
-	if user != nil {
-		log.Errorf("id already exists:%v", req.Id)
-		return ERROR_ALREADY_EXISTS
+func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
+	s.Lock()
+	defer s.Lock()
+	ep := s.eps[p.Id]
+	if ep != nil {
+		log.Errorf("id already exists:%v", p.Id)
+		return nil, ERROR_ALREADY_EXISTS
 	}
 
-	s.users[req.Id] = NewEndPoint()
-	return nil
-}
-
-func (s *server) register_muc(req *Chat_RegParam) error {
-	s.mucs_lock.Lock()
-	defer s.mucs_lock.Lock()
-	m := s.mucs[req.Id]
-	if m != nil {
-		log.Errorf("mucid already exists:%v", req.Id)
-		return ERROR_ALREADY_EXISTS
-	}
-
-	s.mucs[req.Id] = NewEndPoint()
-	return nil
+	s.eps[p.Id] = NewEndPoint()
+	return OK, nil
 }

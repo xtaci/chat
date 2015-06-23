@@ -27,26 +27,6 @@ var _ grpc.ClientConn
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
 
-type Chat_MessageType int32
-
-const (
-	Chat_CHAT Chat_MessageType = 0
-	Chat_MUC  Chat_MessageType = 1
-)
-
-var Chat_MessageType_name = map[int32]string{
-	0: "CHAT",
-	1: "MUC",
-}
-var Chat_MessageType_value = map[string]int32{
-	"CHAT": 0,
-	"MUC":  1,
-}
-
-func (x Chat_MessageType) String() string {
-	return proto1.EnumName(Chat_MessageType_name, int32(x))
-}
-
 type Chat struct {
 }
 
@@ -62,11 +42,9 @@ func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
 type Chat_Message struct {
-	Type     Chat_MessageType `protobuf:"varint,1,opt,enum=proto.Chat_MessageType" json:"Type,omitempty"`
-	FromId   int32            `protobuf:"varint,2,opt" json:"FromId,omitempty"`
-	ToId     int32            `protobuf:"varint,3,opt" json:"ToId,omitempty"`
-	FromName string           `protobuf:"bytes,4,opt" json:"FromName,omitempty"`
-	Body     []byte           `protobuf:"bytes,15,opt,proto3" json:"Body,omitempty"`
+	FromId  uint64 `protobuf:"varint,1,opt" json:"FromId,omitempty"`
+	ToId    uint64 `protobuf:"varint,2,opt" json:"ToId,omitempty"`
+	Content []byte `protobuf:"bytes,3,opt,proto3" json:"Content,omitempty"`
 }
 
 func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
@@ -74,33 +52,23 @@ func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Message) ProtoMessage()    {}
 
 type Chat_Id struct {
-	Id int32 `protobuf:"varint,1,opt" json:"Id,omitempty"`
+	Id uint64 `protobuf:"varint,1,opt" json:"Id,omitempty"`
 }
 
 func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
 func (m *Chat_Id) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Id) ProtoMessage()    {}
 
-type Chat_RegParam struct {
-	MT Chat_MessageType `protobuf:"varint,1,opt,enum=proto.Chat_MessageType" json:"MT,omitempty"`
-	Id int32            `protobuf:"varint,2,opt" json:"Id,omitempty"`
-}
-
-func (m *Chat_RegParam) Reset()         { *m = Chat_RegParam{} }
-func (m *Chat_RegParam) String() string { return proto1.CompactTextString(m) }
-func (*Chat_RegParam) ProtoMessage()    {}
-
 func init() {
-	proto1.RegisterEnum("proto.Chat_MessageType", Chat_MessageType_name, Chat_MessageType_value)
 }
 
 // Client API for ChatService service
 
 type ChatServiceClient interface {
 	Subscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
-	MucSubscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error)
+	Read(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_ReadClient, error)
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
-	Reg(ctx context.Context, in *Chat_RegParam, opts ...grpc.CallOption) (*Chat_Nil, error)
+	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
 
 type chatServiceClient struct {
@@ -143,12 +111,12 @@ func (x *chatServiceSubscribeClient) Recv() (*Chat_Message, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) MucSubscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_MucSubscribeClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[1], c.cc, "/proto.ChatService/MucSubscribe", opts...)
+func (c *chatServiceClient) Read(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_ReadClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[1], c.cc, "/proto.ChatService/Read", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &chatServiceMucSubscribeClient{stream}
+	x := &chatServiceReadClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -158,16 +126,16 @@ func (c *chatServiceClient) MucSubscribe(ctx context.Context, in *Chat_Id, opts 
 	return x, nil
 }
 
-type ChatService_MucSubscribeClient interface {
+type ChatService_ReadClient interface {
 	Recv() (*Chat_Message, error)
 	grpc.ClientStream
 }
 
-type chatServiceMucSubscribeClient struct {
+type chatServiceReadClient struct {
 	grpc.ClientStream
 }
 
-func (x *chatServiceMucSubscribeClient) Recv() (*Chat_Message, error) {
+func (x *chatServiceReadClient) Recv() (*Chat_Message, error) {
 	m := new(Chat_Message)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -184,7 +152,7 @@ func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...
 	return out, nil
 }
 
-func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_RegParam, opts ...grpc.CallOption) (*Chat_Nil, error) {
+func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Reg", in, out, c.cc, opts...)
 	if err != nil {
@@ -197,9 +165,9 @@ func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_RegParam, opts ...
 
 type ChatServiceServer interface {
 	Subscribe(*Chat_Id, ChatService_SubscribeServer) error
-	MucSubscribe(*Chat_Id, ChatService_MucSubscribeServer) error
+	Read(*Chat_Id, ChatService_ReadServer) error
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
-	Reg(context.Context, *Chat_RegParam) (*Chat_Nil, error)
+	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
@@ -227,24 +195,24 @@ func (x *chatServiceSubscribeServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ChatService_MucSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ChatService_Read_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Chat_Id)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChatServiceServer).MucSubscribe(m, &chatServiceMucSubscribeServer{stream})
+	return srv.(ChatServiceServer).Read(m, &chatServiceReadServer{stream})
 }
 
-type ChatService_MucSubscribeServer interface {
+type ChatService_ReadServer interface {
 	Send(*Chat_Message) error
 	grpc.ServerStream
 }
 
-type chatServiceMucSubscribeServer struct {
+type chatServiceReadServer struct {
 	grpc.ServerStream
 }
 
-func (x *chatServiceMucSubscribeServer) Send(m *Chat_Message) error {
+func (x *chatServiceReadServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -261,7 +229,7 @@ func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.
 }
 
 func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Chat_RegParam)
+	in := new(Chat_Id)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}
@@ -292,8 +260,8 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "MucSubscribe",
-			Handler:       _ChatService_MucSubscribe_Handler,
+			StreamName:    "Read",
+			Handler:       _ChatService_Read_Handler,
 			ServerStreams: true,
 		},
 	},
