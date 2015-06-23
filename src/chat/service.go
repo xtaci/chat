@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	log "github.com/GameGophers/libs/nsq-logger"
+	"github.com/xtaci/go-pubsub"
 	"golang.org/x/net/context"
 )
 
 import (
 	. "proto"
-	"pubsub"
 )
 
 const (
@@ -74,7 +74,7 @@ func (s *server) init() {
 
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
 	die := make(chan bool)
-	f := pubsub.NewFunc(func(msg *Chat_Message) {
+	f := pubsub.NewWrap(func(msg *Chat_Message) {
 		if err := stream.Send(msg); err != nil {
 			close(die)
 		}
