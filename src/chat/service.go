@@ -117,8 +117,6 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 	}
 
 	ep.ps.Pub(msg)
-	ep.Lock()
-	defer ep.Lock()
 	ep.Push(msg)
 	return OK, nil
 }
