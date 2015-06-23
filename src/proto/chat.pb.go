@@ -42,9 +42,8 @@ func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
 type Chat_Message struct {
-	Src  uint64 `protobuf:"varint,1,opt" json:"Src,omitempty"`
-	Dst  uint64 `protobuf:"varint,2,opt" json:"Dst,omitempty"`
-	Body []byte `protobuf:"bytes,3,opt,proto3" json:"Body,omitempty"`
+	Id   uint64 `protobuf:"varint,1,opt" json:"Id,omitempty"`
+	Body []byte `protobuf:"bytes,2,opt,proto3" json:"Body,omitempty"`
 }
 
 func (m *Chat_Message) Reset()         { *m = Chat_Message{} }

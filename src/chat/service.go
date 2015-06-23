@@ -111,7 +111,7 @@ func (s *server) Read(p *Chat_Id, stream ChatService_ReadServer) error {
 }
 
 func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error) {
-	ep := s.read_ep(msg.Dst)
+	ep := s.read_ep(msg.Id)
 	if ep == nil {
 		return nil, ERROR_NOT_EXISTS
 	}

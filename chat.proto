@@ -13,9 +13,8 @@ service ChatService {
 message Chat {
 	message Nil { }
 	message Message {
-		uint64 Src=1;
-		uint64 Dst=2;
-		bytes Body=3;
+		uint64 Id=1;
+		bytes Body=2;
 	}
 	message Id{
 		uint64 Id=1;	
