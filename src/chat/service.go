@@ -159,7 +159,7 @@ func (s *server) persistence_task() {
 	db := s.open_db()
 	changes := make(map[uint64]bool)
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGTERM)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
 	for {
 		select {
