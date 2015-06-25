@@ -30,7 +30,7 @@ const (
 	BOLTDB_BUCKET  = "EPS"
 	MAX_QUEUE_SIZE = 128 // num of message kept
 	PENDING_SIZE   = 65536
-	CHECK_INTERVAL = time.Minute // if ranking has changed, how long to check
+	CHECK_INTERVAL = time.Minute
 )
 
 var (
@@ -153,7 +153,7 @@ func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
 	return OK, nil
 }
 
-// persistence ranking tree into db
+// persistence endpoints into db
 func (s *server) persistence_task() {
 	timer := time.After(CHECK_INTERVAL)
 	db := s.open_db()
