@@ -2,11 +2,19 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
 	"sync"
+	"syscall"
+	"time"
 
 	log "github.com/GameGophers/libs/nsq-logger"
+	"github.com/boltdb/bolt"
 	"github.com/xtaci/go-pubsub"
 	"golang.org/x/net/context"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 import (
@@ -21,6 +29,8 @@ const (
 	BOLTDB_FILE    = "/data/CHAT.DAT"
 	BOLTDB_BUCKET  = "EPS"
 	MAX_QUEUE_SIZE = 128 // num of message kept
+	PENDING_SIZE   = 65536
+	CHECK_INTERVAL = time.Minute // if ranking has changed, how long to check
 )
 
 var (
@@ -58,18 +68,22 @@ func NewEndPoint() *EndPoint {
 }
 
 type server struct {
-	eps map[uint64]*EndPoint
+	eps     map[uint64]*EndPoint
+	pending chan uint64
 	sync.RWMutex
+}
+
+func (s *server) init() {
+	s.eps = make(map[uint64]*EndPoint)
+	s.pending = make(chan uint64, PENDING_SIZE)
+	s.restore()
+	go s.persistence_task()
 }
 
 func (s *server) read_ep(id uint64) *EndPoint {
 	s.RLock()
 	defer s.RUnlock()
 	return s.eps[id]
-}
-
-func (s *server) init() {
-	s.eps = make(map[uint64]*EndPoint)
 }
 
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
@@ -121,6 +135,7 @@ func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error)
 
 	ep.ps.Pub(msg)
 	ep.Push(msg)
+	s.pending <- msg.Id
 	return OK, nil
 }
 
@@ -134,5 +149,106 @@ func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
 	}
 
 	s.eps[p.Id] = NewEndPoint()
+	s.pending <- p.Id
 	return OK, nil
+}
+
+// persistence ranking tree into db
+func (s *server) persistence_task() {
+	timer := time.After(CHECK_INTERVAL)
+	db := s.open_db()
+	changes := make(map[uint64]bool)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM)
+
+	for {
+		select {
+		case key := <-s.pending:
+			changes[key] = true
+		case <-timer:
+			s.dump(db, changes)
+			log.Infof("perisisted %v endpoints:", len(changes))
+			changes = make(map[uint64]bool)
+			timer = time.After(CHECK_INTERVAL)
+		case <-sig:
+			s.dump(db, changes)
+			db.Close()
+			log.Info("SIGTERM")
+			os.Exit(0)
+		}
+	}
+}
+
+func (s *server) open_db() *bolt.DB {
+	db, err := bolt.Open(BOLTDB_FILE, 0600, nil)
+	if err != nil {
+		log.Critical(err)
+		os.Exit(-1)
+	}
+	// create bulket
+	db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(BOLTDB_BUCKET))
+		if err != nil {
+			log.Criticalf("create bucket: %s", err)
+			os.Exit(-1)
+		}
+		return nil
+	})
+	return db
+}
+
+func (s *server) dump(db *bolt.DB, changes map[uint64]bool) {
+	for k := range changes {
+		ep := s.read_ep(k)
+		if ep == nil {
+			log.Errorf("cannot find endpoint %v", k)
+			continue
+		}
+
+		// serialization and save
+		bin, err := msgpack.Marshal(ep.Read())
+		if err != nil {
+			log.Critical("cannot marshal:", err)
+			continue
+		}
+
+		db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte(BOLTDB_BUCKET))
+			err := b.Put([]byte(fmt.Sprint(k)), bin)
+			return err
+		})
+	}
+}
+
+func (s *server) restore() {
+	// restore data from db file
+	db := s.open_db()
+	defer db.Close()
+	count := 0
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BOLTDB_BUCKET))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var msg []Chat_Message
+			err := msgpack.Unmarshal(v, &msg)
+			if err != nil {
+				log.Critical("chat data corrupted:", err)
+				os.Exit(-1)
+			}
+			id, err := strconv.ParseUint(string(k), 0, 64)
+			if err != nil {
+				log.Critical("chat data corrupted:", err)
+				os.Exit(-1)
+			}
+			ep := NewEndPoint()
+			ep.inbox = msg
+			s.eps[id] = ep
+			count++
+		}
+
+		return nil
+	})
+
+	log.Infof("restored %v chats", count)
 }
