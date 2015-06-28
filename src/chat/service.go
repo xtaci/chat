@@ -227,9 +227,7 @@ func (s *server) restore() {
 	count := 0
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BOLTDB_BUCKET))
-		c := b.Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
+		b.ForEach(func(k, v []byte) error {
 			var msg []Chat_Message
 			err := msgpack.Unmarshal(v, &msg)
 			if err != nil {
@@ -245,8 +243,8 @@ func (s *server) restore() {
 			ep.inbox = msg
 			s.eps[id] = ep
 			count++
-		}
-
+			return nil
+		})
 		return nil
 	})
 
