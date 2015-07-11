@@ -13,13 +13,18 @@ const (
 	address = "localhost:50008"
 )
 
+var (
+	conn *grpc.ClientConn
+	err  error
+)
+
 func TestChat(t *testing.T) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address)
+	conn, err = grpc.Dial(address)
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
 	}
-	defer conn.Close()
+
 	c := NewChatServiceClient(conn)
 
 	// Contact the server and print out its response.
@@ -37,11 +42,6 @@ func TestChat(t *testing.T) {
 }
 
 func send(m *Chat_Message, count int, t *testing.T) {
-	conn, err := grpc.Dial(address)
-	if err != nil {
-		t.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
 	c := NewChatServiceClient(conn)
 	for {
 		if count == 0 {
@@ -57,11 +57,6 @@ func send(m *Chat_Message, count int, t *testing.T) {
 }
 
 func recv(chat_id *Chat_Id, count int, t *testing.T) {
-	conn, err := grpc.Dial(address)
-	if err != nil {
-		t.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
 	c := NewChatServiceClient(conn)
 	stream, err := c.Subscribe(context.Background(), chat_id)
 	if err != nil {
