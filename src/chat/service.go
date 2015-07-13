@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/GameGophers/libs/nsq-logger"
 	"github.com/boltdb/bolt"
+	log "github.com/gonet2/libs/nsq-logger"
 	"github.com/xtaci/go-pubsub"
 	"golang.org/x/net/context"
 	"gopkg.in/vmihailenco/msgpack.v2"

@@ -4,8 +4,8 @@ import (
 	"net"
 	"os"
 
-	log "github.com/GameGophers/libs/nsq-logger"
-	_ "github.com/GameGophers/libs/statsd-pprof"
+	log "github.com/gonet2/libs/nsq-logger"
+	_ "github.com/gonet2/libs/statsd-pprof"
 	"google.golang.org/grpc"
 )
 

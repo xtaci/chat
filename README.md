@@ -1,5 +1,5 @@
 # chat(聊天）
-[![Build Status](https://travis-ci.org/GameGophers/chat.svg)](https://travis-ci.org/GameGophers/chat)
+[![Build Status](https://travis-ci.org/gonet2/chat.svg)](https://travis-ci.org/gonet2/chat)
 
 ## 设计理念
 
