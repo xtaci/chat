@@ -87,21 +87,23 @@ func (s *server) read_ep(id uint64) *EndPoint {
 }
 
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
-	die := make(chan bool)
-	f := pubsub.NewWrap(func(msg *Chat_Message) {
-		if err := stream.Send(msg); err != nil {
-			close(die)
-		}
-	})
-
-	log.Tracef("new subscriber: %p", f)
-
+	// read endpoint
 	ep := s.read_ep(p.Id)
 	if ep == nil {
 		log.Errorf("cannot find endpoint %v", p)
 		return ERROR_NOT_EXISTS
 	}
 
+	// create wrapper
+	die := make(chan bool)
+	f := pubsub.NewWrap(func(msg *Chat_Message) {
+		if err := stream.Send(msg); err != nil {
+			close(die)
+		}
+	})
+	log.Tracef("new subscriber: %p", f)
+
+	// subscribe
 	ep.ps.Sub(f)
 	defer func() {
 		ep.ps.Leave(f)
