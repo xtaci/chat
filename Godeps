@@ -1,9 +1,9 @@
-github.com/bradfitz/http2 f8202bc903bda493ebba4aa54922d78430c2c42f
+github.com/bradfitz/http2 HEAD
 github.com/gonet2/libs HEAD
 github.com/xtaci/go-pubsub HEAD
-github.com/golang/glog 44145f04b68cf362d9c4df2182967c2275eaefed
-golang.org/x/oauth2 f98d0160877ab4712b906626425ed8b0b320907c
-google.golang.org/grpc f5ebd86be717593ab029545492c93ddf8914832b
+github.com/golang/glog HEAD
+golang.org/x/oauth2 HEAD
+google.golang.org/grpc HEAD
 gopkg.in/vmihailenco/msgpack.v2 v2.3
-github.com/boltdb/bolt 5eb31d5821750fbc84284d610c0ce85261662adb
-github.com/peterbourgon/g2s ec76db4c1ac16400ac0e17ca9c4840e1d23da5dc
+github.com/boltdb/bolt HEAD
+github.com/peterbourgon/g2s HEAD
