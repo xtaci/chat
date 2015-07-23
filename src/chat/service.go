@@ -39,12 +39,14 @@ var (
 	ERROR_NOT_EXISTS     = errors.New("id not exists")
 )
 
+// endpoint definition
 type EndPoint struct {
 	inbox []Chat_Message
 	ps    *pubsub.PubSub
 	sync.Mutex
 }
 
+// push a message to this endpoint
 func (ep *EndPoint) Push(msg *Chat_Message) {
 	ep.Lock()
 	defer ep.Unlock()
@@ -55,6 +57,7 @@ func (ep *EndPoint) Push(msg *Chat_Message) {
 	}
 }
 
+// read all messages from this endpoint
 func (ep *EndPoint) Read() []Chat_Message {
 	ep.Lock()
 	defer ep.Unlock()
@@ -67,9 +70,10 @@ func NewEndPoint() *EndPoint {
 	return u
 }
 
+// server definition
 type server struct {
-	eps     map[uint64]*EndPoint
-	pending chan uint64
+	eps     map[uint64]*EndPoint // end-point-s
+	pending chan uint64          // dirty id pendings
 	sync.RWMutex
 }
 
@@ -86,6 +90,7 @@ func (s *server) read_ep(id uint64) *EndPoint {
 	return s.eps[id]
 }
 
+// subscribe to an endpoint & receive server streams
 func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
 	// read endpoint
 	ep := s.read_ep(p.Id)
@@ -103,7 +108,7 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 	})
 	log.Tracef("new subscriber: %p", f)
 
-	// subscribe
+	// subscribe to the endpoint
 	ep.ps.Sub(f)
 	defer func() {
 		ep.ps.Leave(f)
