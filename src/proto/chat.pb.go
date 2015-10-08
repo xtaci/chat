@@ -14,6 +14,8 @@ It has these top-level messages:
 package proto
 
 import proto1 "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 import (
 	context "golang.org/x/net/context"
@@ -21,11 +23,9 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type Chat struct {
 }
@@ -42,8 +42,8 @@ func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Nil) ProtoMessage()    {}
 
 type Chat_Message struct {
-	Id   uint64 `protobuf:"varint,1,opt" json:"Id,omitempty"`
-	Body []byte `protobuf:"bytes,2,opt,proto3" json:"Body,omitempty"`
+	Id   uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	Body []byte `protobuf:"bytes,2,opt,name=Body,proto3" json:"Body,omitempty"`
 }
 
 func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
@@ -51,15 +51,16 @@ func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Message) ProtoMessage()    {}
 
 type Chat_Id struct {
-	Id uint64 `protobuf:"varint,1,opt" json:"Id,omitempty"`
+	Id uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
 }
 
 func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
 func (m *Chat_Id) String() string { return proto1.CompactTextString(m) }
 func (*Chat_Id) ProtoMessage()    {}
 
-func init() {
-}
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
 
 // Client API for ChatService service
 
@@ -215,9 +216,9 @@ func (x *chatServiceReadServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ChatService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(Chat_Message)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ChatServiceServer).Send(ctx, in)
@@ -227,9 +228,9 @@ func _ChatService_Send_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(Chat_Id)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ChatServiceServer).Reg(ctx, in)
