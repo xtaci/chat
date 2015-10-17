@@ -99,6 +99,14 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 		return ERROR_NOT_EXISTS
 	}
 
+	// send history chat messages
+	msgs := ep.Read()
+	for k := range msgs {
+		if err := stream.Send(&msgs[k]); err != nil {
+			return nil
+		}
+	}
+
 	// create wrapper
 	die := make(chan bool)
 	f := pubsub.NewWrap(func(msg *Chat_Message) {
@@ -115,22 +123,6 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 	}()
 
 	<-die
-	return nil
-}
-
-func (s *server) Read(p *Chat_Id, stream ChatService_ReadServer) error {
-	ep := s.read_ep(p.Id)
-	if ep == nil {
-		log.Errorf("cannot find endpoint %v", p)
-		return ERROR_NOT_EXISTS
-	}
-
-	msgs := ep.Read()
-	for k := range msgs {
-		if err := stream.Send(&msgs[k]); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

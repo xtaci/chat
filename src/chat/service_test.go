@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	address = "localhost:50008"
+	address = "192.168.99.100:50008"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 
 func TestChat(t *testing.T) {
 	// Set up a connection to the server.
-	conn, err = grpc.Dial(address)
+	conn, err = grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
 	}

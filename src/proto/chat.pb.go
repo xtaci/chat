@@ -66,7 +66,6 @@ var _ grpc.ClientConn
 
 type ChatServiceClient interface {
 	Subscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
-	Read(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_ReadClient, error)
 	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
 	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
 }
@@ -111,38 +110,6 @@ func (x *chatServiceSubscribeClient) Recv() (*Chat_Message, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) Read(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_ReadClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[1], c.cc, "/proto.ChatService/Read", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &chatServiceReadClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type ChatService_ReadClient interface {
-	Recv() (*Chat_Message, error)
-	grpc.ClientStream
-}
-
-type chatServiceReadClient struct {
-	grpc.ClientStream
-}
-
-func (x *chatServiceReadClient) Recv() (*Chat_Message, error) {
-	m := new(Chat_Message)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
@@ -165,7 +132,6 @@ func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.C
 
 type ChatServiceServer interface {
 	Subscribe(*Chat_Id, ChatService_SubscribeServer) error
-	Read(*Chat_Id, ChatService_ReadServer) error
 	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
 	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
 }
@@ -192,27 +158,6 @@ type chatServiceSubscribeServer struct {
 }
 
 func (x *chatServiceSubscribeServer) Send(m *Chat_Message) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _ChatService_Read_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Chat_Id)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ChatServiceServer).Read(m, &chatServiceReadServer{stream})
-}
-
-type ChatService_ReadServer interface {
-	Send(*Chat_Message) error
-	grpc.ServerStream
-}
-
-type chatServiceReadServer struct {
-	grpc.ServerStream
-}
-
-func (x *chatServiceReadServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -257,11 +202,6 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Subscribe",
 			Handler:       _ChatService_Subscribe_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "Read",
-			Handler:       _ChatService_Read_Handler,
 			ServerStreams: true,
 		},
 	},
