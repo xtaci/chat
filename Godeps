@@ -1,6 +1,5 @@
 github.com/bradfitz/http2 HEAD
 github.com/gonet2/libs HEAD
-github.com/xtaci/go-pubsub HEAD
 github.com/golang/glog HEAD
 google.golang.org/grpc HEAD
 gopkg.in/vmihailenco/msgpack.v2 v2.3

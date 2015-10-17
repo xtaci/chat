@@ -12,7 +12,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	log "github.com/gonet2/libs/nsq-logger"
-	"github.com/xtaci/go-pubsub"
 	"golang.org/x/net/context"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -42,7 +41,7 @@ var (
 // endpoint definition
 type EndPoint struct {
 	inbox []Chat_Message
-	ps    *pubsub.PubSub
+	ps    *PubSub
 	sync.Mutex
 }
 
@@ -66,7 +65,7 @@ func (ep *EndPoint) Read() []Chat_Message {
 
 func NewEndPoint() *EndPoint {
 	u := &EndPoint{}
-	u.ps = pubsub.New()
+	u.ps = NewPubSub()
 	return u
 }
 
@@ -109,7 +108,7 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 
 	// create wrapper
 	die := make(chan bool)
-	f := pubsub.NewWrap(func(msg *Chat_Message) {
+	f := NewSubscriber(func(msg *Chat_Message) {
 		if err := stream.Send(msg); err != nil {
 			close(die)
 		}
