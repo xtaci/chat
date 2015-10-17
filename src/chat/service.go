@@ -65,7 +65,8 @@ func (ep *EndPoint) Read() []Chat_Message {
 
 func NewEndPoint() *EndPoint {
 	u := &EndPoint{}
-	u.ps = NewPubSub()
+	u.ps = &PubSub{}
+	u.ps.init()
 	return u
 }
 

@@ -25,9 +25,7 @@ type PubSub struct {
 	sync.Mutex
 }
 
-// New return new PubSub intreface.
-func NewPubSub() *PubSub {
-	ps := new(PubSub)
+func (ps *PubSub) init() {
 	ps.ch_msg = make(chan interface{})
 	call := func(rf reflect.Value, in []reflect.Value) {
 		defer func() { // do not let callback panic the pubsub
@@ -51,7 +49,6 @@ func NewPubSub() *PubSub {
 			ps.Unlock()
 		}
 	}()
-	return ps
 }
 
 // Sub subscribe to the PubSub.
