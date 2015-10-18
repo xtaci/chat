@@ -34,10 +34,9 @@ func TestChat(t *testing.T) {
 	}
 
 	const COUNT = 10
-	go recv(&Chat_Id{1}, COUNT, t)
-	go recv(&Chat_Id{1}, COUNT, t)
-	time.Sleep(3 * time.Second)
 	go send(&Chat_Message{Id: 1, Body: []byte("Hello")}, COUNT, t)
+	go recv(&Chat_Id{1}, COUNT, t)
+	go recv(&Chat_Id{1}, COUNT, t)
 	time.Sleep(3 * time.Second)
 }
 
@@ -58,20 +57,24 @@ func send(m *Chat_Message, count int, t *testing.T) {
 
 func recv(chat_id *Chat_Id, count int, t *testing.T) {
 	c := NewChatServiceClient(conn)
-	stream, err := c.Subscribe(context.Background(), chat_id)
+	ctx, cancel := context.WithCancel(context.Background())
+	stream, err := c.Subscribe(ctx, chat_id)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for {
 		if count == 0 {
 			return
 		}
 		message, err := stream.Recv()
 		if err != nil {
-			t.Fatal(err)
+			t.Log(err)
+			return
 		}
 		println("recv:", count)
 		t.Log("recv:", message)
 		count--
+		cancel() // recv should continue until error
 	}
 }

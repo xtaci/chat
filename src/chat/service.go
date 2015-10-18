@@ -107,22 +107,31 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 		}
 	}
 
-	// create wrapper
-	die := make(chan bool)
+	// create subscriber
+	e := make(chan error, 1)
+	var once sync.Once
 	f := NewSubscriber(func(msg *Chat_Message) {
 		if err := stream.Send(msg); err != nil {
-			close(die)
+			once.Do(func() { // protect for channel blocking
+				e <- err
+			})
 		}
 	})
-	log.Tracef("new subscriber: %p", f)
 
 	// subscribe to the endpoint
+	log.Tracef("subscribe to:%v", p.Id)
 	ep.ps.Sub(f)
 	defer func() {
 		ep.ps.Leave(f)
+		log.Tracef("leave from:%v", p.Id)
 	}()
 
-	<-die
+	// client send cancel to stop receiving, see service_test.go for example
+	select {
+	case <-stream.Context().Done():
+	case <-e:
+		log.Error(e)
+	}
 	return nil
 }
 
