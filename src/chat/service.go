@@ -175,7 +175,9 @@ func (s *server) persistence_task() {
 			changes[key] = true
 		case <-timer:
 			s.dump(db, changes)
-			log.Infof("perisisted %v endpoints:", len(changes))
+			if len(changes) > 0 {
+				log.Infof("perisisted %v endpoints:", len(changes))
+			}
 			changes = make(map[uint64]bool)
 			timer = time.After(CHECK_INTERVAL)
 		case nr := <-sig:
