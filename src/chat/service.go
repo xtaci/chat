@@ -208,26 +208,29 @@ func (s *server) open_db() *bolt.DB {
 }
 
 func (s *server) dump(db *bolt.DB, changes map[uint64]bool) {
-	for k := range changes {
-		ep := s.read_ep(k)
-		if ep == nil {
-			log.Errorf("cannot find endpoint %v", k)
-			continue
-		}
+	db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BOLTDB_BUCKET))
+		for k := range changes {
+			ep := s.read_ep(k)
+			if ep == nil {
+				log.Errorf("cannot find endpoint %v", k)
+				continue
+			}
 
-		// serialization and save
-		bin, err := msgpack.Marshal(ep.Read())
-		if err != nil {
-			log.Critical("cannot marshal:", err)
-			continue
+			// serialization and save
+			bin, err := msgpack.Marshal(ep.Read())
+			if err != nil {
+				log.Critical("cannot marshal:", err)
+				continue
+			}
+			err = b.Put([]byte(fmt.Sprint(k)), bin)
+			if err != nil {
+				log.Critical(err)
+				continue
+			}
 		}
-
-		db.Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte(BOLTDB_BUCKET))
-			err := b.Put([]byte(fmt.Sprint(k)), bin)
-			return err
-		})
-	}
+		return nil
+	})
 }
 
 func (s *server) restore() {
