@@ -27,40 +27,59 @@ var _ = proto1.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto1.ProtoPackageIsVersion1
+
 type Chat struct {
 }
 
-func (m *Chat) Reset()         { *m = Chat{} }
-func (m *Chat) String() string { return proto1.CompactTextString(m) }
-func (*Chat) ProtoMessage()    {}
+func (m *Chat) Reset()                    { *m = Chat{} }
+func (m *Chat) String() string            { return proto1.CompactTextString(m) }
+func (*Chat) ProtoMessage()               {}
+func (*Chat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type Chat_Nil struct {
 }
 
-func (m *Chat_Nil) Reset()         { *m = Chat_Nil{} }
-func (m *Chat_Nil) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Nil) ProtoMessage()    {}
+func (m *Chat_Nil) Reset()                    { *m = Chat_Nil{} }
+func (m *Chat_Nil) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_Nil) ProtoMessage()               {}
+func (*Chat_Nil) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
 type Chat_Message struct {
 	Id   uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
 	Body []byte `protobuf:"bytes,2,opt,name=Body,proto3" json:"Body,omitempty"`
 }
 
-func (m *Chat_Message) Reset()         { *m = Chat_Message{} }
-func (m *Chat_Message) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Message) ProtoMessage()    {}
+func (m *Chat_Message) Reset()                    { *m = Chat_Message{} }
+func (m *Chat_Message) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_Message) ProtoMessage()               {}
+func (*Chat_Message) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
 
 type Chat_Id struct {
 	Id uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
 }
 
-func (m *Chat_Id) Reset()         { *m = Chat_Id{} }
-func (m *Chat_Id) String() string { return proto1.CompactTextString(m) }
-func (*Chat_Id) ProtoMessage()    {}
+func (m *Chat_Id) Reset()                    { *m = Chat_Id{} }
+func (m *Chat_Id) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_Id) ProtoMessage()               {}
+func (*Chat_Id) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 2} }
+
+func init() {
+	proto1.RegisterType((*Chat)(nil), "proto.Chat")
+	proto1.RegisterType((*Chat_Nil)(nil), "proto.Chat.Nil")
+	proto1.RegisterType((*Chat_Message)(nil), "proto.Chat.Message")
+	proto1.RegisterType((*Chat_Id)(nil), "proto.Chat.Id")
+}
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for ChatService service
 
@@ -161,28 +180,40 @@ func (x *chatServiceSubscribeServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ChatService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ChatService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Chat_Message)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ChatServiceServer).Send(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ChatServiceServer).Send(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ChatService/Send",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).Send(ctx, req.(*Chat_Message))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Chat_Id)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ChatServiceServer).Reg(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ChatServiceServer).Reg(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ChatService/Reg",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).Reg(ctx, req.(*Chat_Id))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _ChatService_serviceDesc = grpc.ServiceDesc{
@@ -205,4 +236,19 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
+}
+
+var fileDescriptor0 = []byte{
+	// 174 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x4a, 0xce, 0x48, 0x2c,
+	0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x53, 0x4a, 0x2e, 0x5c, 0x2c, 0xce, 0x40,
+	0x41, 0x29, 0x56, 0x2e, 0x66, 0xbf, 0xcc, 0x1c, 0x29, 0x65, 0x2e, 0x76, 0xdf, 0xd4, 0xe2, 0xe2,
+	0xc4, 0xf4, 0x54, 0x21, 0x2e, 0x2e, 0x26, 0xcf, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x16, 0x21,
+	0x1e, 0x2e, 0x16, 0xa7, 0xfc, 0x94, 0x4a, 0x09, 0x26, 0x20, 0x8f, 0x47, 0x4a, 0x00, 0x24, 0x83,
+	0x2c, 0x6f, 0x34, 0x9d, 0x91, 0x8b, 0x1b, 0x64, 0x4c, 0x70, 0x6a, 0x51, 0x59, 0x66, 0x72, 0xaa,
+	0x90, 0x11, 0x17, 0x67, 0x70, 0x69, 0x52, 0x71, 0x72, 0x51, 0x66, 0x52, 0xaa, 0x10, 0x1f, 0xc4,
+	0x46, 0x3d, 0x90, 0x02, 0x3d, 0xcf, 0x14, 0x29, 0x61, 0x64, 0x3e, 0xd4, 0x36, 0x03, 0x46, 0x21,
+	0x1d, 0x2e, 0x96, 0xe0, 0xd4, 0xbc, 0x14, 0x21, 0x6c, 0xd2, 0x52, 0xfc, 0xc8, 0x82, 0x40, 0x87,
+	0x0a, 0xa9, 0x71, 0x31, 0x07, 0xa5, 0xa6, 0x63, 0x98, 0x8d, 0xae, 0x2e, 0x89, 0x0d, 0xcc, 0x37,
+	0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x4c, 0x89, 0x1f, 0xbf, 0xfb, 0x00, 0x00, 0x00,
 }
