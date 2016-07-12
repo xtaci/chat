@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
-	log "github.com/gonet2/libs/nsq-logger"
 	"golang.org/x/net/context"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -119,11 +119,11 @@ func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error
 	})
 
 	// subscribe to the endpoint
-	log.Tracef("subscribe to:%v", p.Id)
+	log.Debugf("subscribe to:%v", p.Id)
 	ep.ps.Sub(f)
 	defer func() {
 		ep.ps.Leave(f)
-		log.Tracef("leave from:%v", p.Id)
+		log.Debugf("leave from:%v", p.Id)
 	}()
 
 	// client send cancel to stop receiving, see service_test.go for example
@@ -192,14 +192,14 @@ func (s *server) persistence_task() {
 func (s *server) open_db() *bolt.DB {
 	db, err := bolt.Open(BOLTDB_FILE, 0600, nil)
 	if err != nil {
-		log.Critical(err)
+		log.Panic(err)
 		os.Exit(-1)
 	}
 	// create bulket
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(BOLTDB_BUCKET))
 		if err != nil {
-			log.Criticalf("create bucket: %s", err)
+			log.Panicf("create bucket: %s", err)
 			os.Exit(-1)
 		}
 		return nil
@@ -220,12 +220,12 @@ func (s *server) dump(db *bolt.DB, changes map[uint64]bool) {
 			// serialization and save
 			bin, err := msgpack.Marshal(ep.Read())
 			if err != nil {
-				log.Critical("cannot marshal:", err)
+				log.Error("cannot marshal:", err)
 				continue
 			}
 			err = b.Put([]byte(fmt.Sprint(k)), bin)
 			if err != nil {
-				log.Critical(err)
+				log.Error(err)
 				continue
 			}
 		}
@@ -244,12 +244,12 @@ func (s *server) restore() {
 			var msg []Chat_Message
 			err := msgpack.Unmarshal(v, &msg)
 			if err != nil {
-				log.Critical("chat data corrupted:", err)
+				log.Error("chat data corrupted:", err)
 				os.Exit(-1)
 			}
 			id, err := strconv.ParseUint(string(k), 0, 64)
 			if err != nil {
-				log.Critical("chat data corrupted:", err)
+				log.Error("chat data corrupted:", err)
 				os.Exit(-1)
 			}
 			ep := NewEndPoint()

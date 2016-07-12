@@ -2,9 +2,10 @@ package main
 
 import (
 	"errors"
-	log "github.com/gonet2/libs/nsq-logger"
 	"reflect"
 	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // a subscribers carries a callback funcion
