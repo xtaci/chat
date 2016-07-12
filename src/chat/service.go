@@ -17,7 +17,7 @@ import (
 )
 
 import (
-	. "proto"
+	. "chat/proto"
 )
 
 const (
