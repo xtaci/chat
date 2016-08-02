@@ -1,10 +1,11 @@
-language: go
-go:
-    - tip
-install:
-    - export GOPATH=$GOPATH/src/github.com/gonet2/chat
-    - cd $GOPATH
-    - go install chat
+sudo: required
+
+services:
+    - docker
+
+before_install:
+    - docker build -t xtaci/chat .
+
 before_script:
 script:
     - exit 0
