@@ -49,15 +49,21 @@ func (m *Chat_Nil) String() string            { return proto1.CompactTextString(
 func (*Chat_Nil) ProtoMessage()               {}
 func (*Chat_Nil) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
-type Chat_Message struct {
-	Id   uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
-	Body []byte `protobuf:"bytes,2,opt,name=Body,proto3" json:"Body,omitempty"`
+type Chat_List struct {
+	Messages []*Chat_Message `protobuf:"bytes,1,rep,name=Messages" json:"Messages,omitempty"`
 }
 
-func (m *Chat_Message) Reset()                    { *m = Chat_Message{} }
-func (m *Chat_Message) String() string            { return proto1.CompactTextString(m) }
-func (*Chat_Message) ProtoMessage()               {}
-func (*Chat_Message) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
+func (m *Chat_List) Reset()                    { *m = Chat_List{} }
+func (m *Chat_List) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_List) ProtoMessage()               {}
+func (*Chat_List) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
+
+func (m *Chat_List) GetMessages() []*Chat_Message {
+	if m != nil {
+		return m.Messages
+	}
+	return nil
+}
 
 type Chat_Id struct {
 	Id uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
@@ -68,11 +74,57 @@ func (m *Chat_Id) String() string            { return proto1.CompactTextString(m
 func (*Chat_Id) ProtoMessage()               {}
 func (*Chat_Id) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 2} }
 
+type Chat_Message struct {
+	Id     uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	Body   []byte `protobuf:"bytes,2,opt,name=Body,proto3" json:"Body,omitempty"`
+	Offset int64  `protobuf:"varint,3,opt,name=Offset" json:"Offset,omitempty"`
+}
+
+func (m *Chat_Message) Reset()                    { *m = Chat_Message{} }
+func (m *Chat_Message) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_Message) ProtoMessage()               {}
+func (*Chat_Message) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 3} }
+
+type Chat_Consumer struct {
+	Id   uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	From int64  `protobuf:"varint,2,opt,name=From" json:"From,omitempty"`
+}
+
+func (m *Chat_Consumer) Reset()                    { *m = Chat_Consumer{} }
+func (m *Chat_Consumer) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_Consumer) ProtoMessage()               {}
+func (*Chat_Consumer) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 4} }
+
+type Chat_ConsumeRange struct {
+	Id   uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	From int64  `protobuf:"varint,2,opt,name=From" json:"From,omitempty"`
+	To   int64  `protobuf:"varint,3,opt,name=To" json:"To,omitempty"`
+}
+
+func (m *Chat_ConsumeRange) Reset()                    { *m = Chat_ConsumeRange{} }
+func (m *Chat_ConsumeRange) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_ConsumeRange) ProtoMessage()               {}
+func (*Chat_ConsumeRange) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 5} }
+
+type Chat_ConsumeLatest struct {
+	Id     uint64 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	Length int64  `protobuf:"varint,2,opt,name=Length" json:"Length,omitempty"`
+}
+
+func (m *Chat_ConsumeLatest) Reset()                    { *m = Chat_ConsumeLatest{} }
+func (m *Chat_ConsumeLatest) String() string            { return proto1.CompactTextString(m) }
+func (*Chat_ConsumeLatest) ProtoMessage()               {}
+func (*Chat_ConsumeLatest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 6} }
+
 func init() {
 	proto1.RegisterType((*Chat)(nil), "proto.Chat")
 	proto1.RegisterType((*Chat_Nil)(nil), "proto.Chat.Nil")
-	proto1.RegisterType((*Chat_Message)(nil), "proto.Chat.Message")
+	proto1.RegisterType((*Chat_List)(nil), "proto.Chat.List")
 	proto1.RegisterType((*Chat_Id)(nil), "proto.Chat.Id")
+	proto1.RegisterType((*Chat_Message)(nil), "proto.Chat.Message")
+	proto1.RegisterType((*Chat_Consumer)(nil), "proto.Chat.Consumer")
+	proto1.RegisterType((*Chat_ConsumeRange)(nil), "proto.Chat.ConsumeRange")
+	proto1.RegisterType((*Chat_ConsumeLatest)(nil), "proto.Chat.ConsumeLatest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -86,9 +138,10 @@ const _ = grpc.SupportPackageIsVersion3
 // Client API for ChatService service
 
 type ChatServiceClient interface {
-	Subscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
-	Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error)
+	Subscribe(ctx context.Context, in *Chat_Consumer, opts ...grpc.CallOption) (ChatService_SubscribeClient, error)
 	Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error)
+	Query(ctx context.Context, in *Chat_ConsumeRange, opts ...grpc.CallOption) (*Chat_List, error)
+	Latest(ctx context.Context, in *Chat_ConsumeLatest, opts ...grpc.CallOption) (*Chat_List, error)
 }
 
 type chatServiceClient struct {
@@ -99,7 +152,7 @@ func NewChatServiceClient(cc *grpc.ClientConn) ChatServiceClient {
 	return &chatServiceClient{cc}
 }
 
-func (c *chatServiceClient) Subscribe(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (ChatService_SubscribeClient, error) {
+func (c *chatServiceClient) Subscribe(ctx context.Context, in *Chat_Consumer, opts ...grpc.CallOption) (ChatService_SubscribeClient, error) {
 	stream, err := grpc.NewClientStream(ctx, &_ChatService_serviceDesc.Streams[0], c.cc, "/proto.ChatService/Subscribe", opts...)
 	if err != nil {
 		return nil, err
@@ -131,15 +184,6 @@ func (x *chatServiceSubscribeClient) Recv() (*Chat_Message, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) Send(ctx context.Context, in *Chat_Message, opts ...grpc.CallOption) (*Chat_Nil, error) {
-	out := new(Chat_Nil)
-	err := grpc.Invoke(ctx, "/proto.ChatService/Send", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.CallOption) (*Chat_Nil, error) {
 	out := new(Chat_Nil)
 	err := grpc.Invoke(ctx, "/proto.ChatService/Reg", in, out, c.cc, opts...)
@@ -149,12 +193,31 @@ func (c *chatServiceClient) Reg(ctx context.Context, in *Chat_Id, opts ...grpc.C
 	return out, nil
 }
 
+func (c *chatServiceClient) Query(ctx context.Context, in *Chat_ConsumeRange, opts ...grpc.CallOption) (*Chat_List, error) {
+	out := new(Chat_List)
+	err := grpc.Invoke(ctx, "/proto.ChatService/Query", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) Latest(ctx context.Context, in *Chat_ConsumeLatest, opts ...grpc.CallOption) (*Chat_List, error) {
+	out := new(Chat_List)
+	err := grpc.Invoke(ctx, "/proto.ChatService/Latest", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for ChatService service
 
 type ChatServiceServer interface {
-	Subscribe(*Chat_Id, ChatService_SubscribeServer) error
-	Send(context.Context, *Chat_Message) (*Chat_Nil, error)
+	Subscribe(*Chat_Consumer, ChatService_SubscribeServer) error
 	Reg(context.Context, *Chat_Id) (*Chat_Nil, error)
+	Query(context.Context, *Chat_ConsumeRange) (*Chat_List, error)
+	Latest(context.Context, *Chat_ConsumeLatest) (*Chat_List, error)
 }
 
 func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
@@ -162,7 +225,7 @@ func RegisterChatServiceServer(s *grpc.Server, srv ChatServiceServer) {
 }
 
 func _ChatService_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Chat_Id)
+	m := new(Chat_Consumer)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -180,24 +243,6 @@ type chatServiceSubscribeServer struct {
 
 func (x *chatServiceSubscribeServer) Send(m *Chat_Message) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func _ChatService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Chat_Message)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChatServiceServer).Send(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.ChatService/Send",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServiceServer).Send(ctx, req.(*Chat_Message))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -218,17 +263,57 @@ func _ChatService_Reg_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Chat_ConsumeRange)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).Query(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ChatService/Query",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).Query(ctx, req.(*Chat_ConsumeRange))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_Latest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Chat_ConsumeLatest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).Latest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ChatService/Latest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).Latest(ctx, req.(*Chat_ConsumeLatest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ChatService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Send",
-			Handler:    _ChatService_Send_Handler,
-		},
-		{
 			MethodName: "Reg",
 			Handler:    _ChatService_Reg_Handler,
+		},
+		{
+			MethodName: "Query",
+			Handler:    _ChatService_Query_Handler,
+		},
+		{
+			MethodName: "Latest",
+			Handler:    _ChatService_Latest_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -244,17 +329,24 @@ var _ChatService_serviceDesc = grpc.ServiceDesc{
 func init() { proto1.RegisterFile("chat.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 177 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x4a, 0xce, 0x48, 0x2c,
-	0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x53, 0x4a, 0x2e, 0x5c, 0x2c, 0xce, 0x19,
-	0x89, 0x25, 0x52, 0xac, 0x5c, 0xcc, 0x7e, 0x99, 0x39, 0x52, 0xca, 0x5c, 0xec, 0xbe, 0xa9, 0xc5,
-	0xc5, 0x89, 0xe9, 0xa9, 0x42, 0x5c, 0x5c, 0x4c, 0x9e, 0x29, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x2c,
-	0x42, 0x3c, 0x5c, 0x2c, 0x4e, 0xf9, 0x29, 0x95, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x3c, 0x52, 0x02,
-	0x20, 0x19, 0x64, 0x79, 0xa3, 0xe9, 0x8c, 0x5c, 0xdc, 0x20, 0x63, 0x82, 0x53, 0x8b, 0xca, 0x32,
-	0x93, 0x53, 0x85, 0x8c, 0xb8, 0x38, 0x83, 0x4b, 0x93, 0x8a, 0x93, 0x8b, 0x32, 0x93, 0x52, 0x85,
-	0xf8, 0x20, 0x36, 0xea, 0x81, 0x14, 0xe8, 0x79, 0xa6, 0x48, 0x09, 0x23, 0xf3, 0xa1, 0xb6, 0x19,
-	0x30, 0x0a, 0xe9, 0x70, 0xb1, 0x04, 0xa7, 0xe6, 0xa5, 0x08, 0x61, 0x93, 0x96, 0xe2, 0x47, 0x16,
-	0xf4, 0xcb, 0xcc, 0x11, 0x52, 0xe3, 0x62, 0x0e, 0x4a, 0x4d, 0xc7, 0x30, 0x1b, 0x5d, 0x5d, 0x12,
-	0x1b, 0x98, 0x6f, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x4c, 0x89, 0x1f, 0xbf, 0xfb, 0x00, 0x00,
-	0x00,
+	// 297 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x91, 0xdd, 0x4a, 0xc3, 0x40,
+	0x10, 0x85, 0x49, 0x37, 0xa9, 0x75, 0x1a, 0x6b, 0x59, 0xbd, 0x88, 0x7b, 0x25, 0xa2, 0x52, 0x10,
+	0x83, 0x34, 0x0a, 0x5e, 0x5b, 0x10, 0x0a, 0x51, 0xb1, 0xf5, 0x05, 0xf2, 0x33, 0x4d, 0x03, 0x36,
+	0x2b, 0xbb, 0x1b, 0xa1, 0xef, 0xe0, 0x1b, 0xfa, 0x32, 0x6e, 0x7e, 0xc4, 0xc5, 0xe6, 0x26, 0x61,
+	0xe6, 0x9c, 0x6f, 0x98, 0x33, 0x0b, 0x90, 0xac, 0x23, 0xe5, 0x7f, 0x08, 0xae, 0x38, 0x75, 0xea,
+	0xdf, 0xd9, 0x57, 0x0f, 0xec, 0x99, 0xee, 0x32, 0x07, 0xc8, 0x73, 0xfe, 0xce, 0xae, 0xc1, 0x0e,
+	0x73, 0xa9, 0xe8, 0x05, 0x0c, 0x9e, 0x50, 0xca, 0x28, 0x43, 0xe9, 0x59, 0xa7, 0x64, 0x32, 0x9c,
+	0x1e, 0x35, 0xa0, 0x5f, 0xb9, 0xfd, 0x56, 0x63, 0x63, 0xe8, 0xcd, 0x53, 0x0a, 0xd5, 0x57, 0xdb,
+	0xac, 0x89, 0xcd, 0x02, 0xd8, 0x6b, 0x45, 0xb3, 0x4d, 0x5d, 0xb0, 0x1f, 0x78, 0xba, 0xf5, 0x7a,
+	0xba, 0x72, 0xe9, 0x08, 0xfa, 0x2f, 0xab, 0x95, 0x44, 0xe5, 0x11, 0x5d, 0x13, 0x76, 0x0e, 0x83,
+	0x19, 0x2f, 0x64, 0xb9, 0x41, 0xf1, 0x9f, 0x7a, 0x14, 0x7c, 0x53, 0x53, 0x84, 0xdd, 0x82, 0xdb,
+	0xba, 0x16, 0x51, 0xb1, 0x3b, 0xff, 0xcf, 0x59, 0x29, 0x6f, 0xbc, 0x9d, 0x7d, 0x05, 0x07, 0x2d,
+	0x15, 0x46, 0x0a, 0x75, 0x34, 0x13, 0xd3, 0x8b, 0x84, 0x58, 0x64, 0x6a, 0xdd, 0x80, 0xd3, 0x6f,
+	0x0b, 0x86, 0x55, 0xc0, 0x25, 0x8a, 0xcf, 0x3c, 0x41, 0x7a, 0x0f, 0xfb, 0xcb, 0x32, 0x96, 0x89,
+	0xc8, 0x63, 0xa4, 0xc7, 0xe6, 0x05, 0x7e, 0xf7, 0x65, 0x5d, 0x77, 0xb9, 0xb1, 0xe8, 0x25, 0x90,
+	0x05, 0x66, 0x74, 0x64, 0xaa, 0xf3, 0x94, 0x1d, 0x9a, 0xb5, 0x3e, 0x38, 0x0d, 0xc0, 0x79, 0x2d,
+	0x51, 0x6c, 0xa9, 0xd7, 0x31, 0xbd, 0xce, 0xc9, 0xc6, 0xa6, 0x52, 0xbf, 0xce, 0x9d, 0x5e, 0xbb,
+	0x09, 0x73, 0xd2, 0x41, 0x35, 0xd2, 0x2e, 0x16, 0xf7, 0xeb, 0x46, 0xf0, 0x13, 0x00, 0x00, 0xff,
+	0xff, 0x28, 0x49, 0x5b, 0x16, 0x08, 0x02, 0x00, 0x00,
 }

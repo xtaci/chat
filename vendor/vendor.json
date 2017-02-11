@@ -15,6 +15,12 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "kTlNdyZIhQxOA+kQKpoQaptbNhE=",
+			"path": "github.com/Shopify/sarama",
+			"revision": "0fb560e5f7fbcaee2f75e3c34174320709f69944",
+			"revisionTime": "2016-12-20T18:06:09Z"
+		},
+		{
 			"checksumSHA1": "htjvdG/znrHmFYRQBqA2vHrJsF4=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "f3cfb454f4c209e6668c95216c4744b8fddb2356",
@@ -27,22 +33,70 @@
 			"revisionTime": "2016-07-07T16:56:50Z"
 		},
 		{
+			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
+			"revisionTime": "2016-10-29T20:57:26Z"
+		},
+		{
+			"checksumSHA1": "y2Kh4iPlgCPXSGTCcFpzePYdzzg=",
+			"path": "github.com/eapache/go-resiliency/breaker",
+			"revision": "b86b1ec0dd4209a588dc1285cdd471e73525c0b3",
+			"revisionTime": "2016-01-04T19:15:39Z"
+		},
+		{
+			"checksumSHA1": "WHl96RVZlOOdF4Lb1OOadMpw8ls=",
+			"path": "github.com/eapache/go-xerial-snappy",
+			"revision": "bb955e01b9346ac19dc29eb16586c90ded99a98c",
+			"revisionTime": "2016-06-09T14:24:08Z"
+		},
+		{
+			"checksumSHA1": "oCCs6kDanizatplM5e/hX76busE=",
+			"path": "github.com/eapache/queue",
+			"revision": "44cc805cf13205b55f69e14bcb69867d1ae92f98",
+			"revisionTime": "2016-08-05T00:47:13Z"
+		},
+		{
 			"checksumSHA1": "M/1HiQFl2DyE+q3pFf8swvAQ3MY=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "3852dcfda249c2097355a6aabb199a28d97b30df",
 			"revisionTime": "2016-06-29T21:10:53Z"
 		},
 		{
-			"checksumSHA1": "C8c4QZJS099ZNBIQsrLMFHkNjxk=",
-			"path": "github.com/gonet2/libs/statsd-pprof",
-			"revision": "1b61d919b824e1fd54a32e370058cf43ba82469d",
-			"revisionTime": "2016-07-12T15:56:50Z"
+			"checksumSHA1": "W+E/2xXcE1GmJ0Qb784ald0Fn6I=",
+			"path": "github.com/golang/snappy",
+			"revision": "d9eb7a3d35ec988b8585d4a0068e462c27d28380",
+			"revisionTime": "2016-05-29T05:00:41Z"
 		},
 		{
-			"checksumSHA1": "98pC93jy7+oik3tlde3hVAoh3SE=",
-			"path": "github.com/peterbourgon/g2s",
-			"revision": "ec76db4c1ac16400ac0e17ca9c4840e1d23da5dc",
-			"revisionTime": "2014-09-25T15:41:42Z"
+			"checksumSHA1": "BM6ZlNJmtKy3GBoWwg2X55gnZ4A=",
+			"path": "github.com/klauspost/crc32",
+			"revision": "cb6bfca970f6908083f26f39a79009d608efd5cd",
+			"revisionTime": "2016-10-16T15:41:25Z"
+		},
+		{
+			"checksumSHA1": "BMjSRH5mPFsBz4Z1r9f/MzwVlXA=",
+			"path": "github.com/pierrec/lz4",
+			"revision": "5c9560bfa9ace2bf86080bf40d46b34ae44604df",
+			"revisionTime": "2016-12-06T20:23:05Z"
+		},
+		{
+			"checksumSHA1": "IT4sX58d+e8osXHV5U6YCSdB/uE=",
+			"path": "github.com/pierrec/xxHash/xxHash32",
+			"revision": "5a004441f897722c627870a981d02b29924215fa",
+			"revisionTime": "2016-01-12T16:53:51Z"
+		},
+		{
+			"checksumSHA1": "KAzbLjI9MzW2tjfcAsK75lVRp6I=",
+			"path": "github.com/rcrowley/go-metrics",
+			"revision": "1f30fe9094a513ce4c700b9a54458bbb0c96996c",
+			"revisionTime": "2016-11-28T21:05:44Z"
+		},
+		{
+			"checksumSHA1": "H9F5P/Wg9nVtBtm9/FZyyrtg79Q=",
+			"path": "github.com/xtaci/logrushooks",
+			"revision": "6924c5fb94b3ba0cb21ce11ec9a5ac620a1eb39f",
+			"revisionTime": "2016-09-24T10:21:37Z"
 		},
 		{
 			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
@@ -85,60 +139,6 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "a408501be4d17ee978c04a618e7a1b22af058c0e",
 			"revisionTime": "2016-07-03T23:56:20Z"
-		},
-		{
-			"checksumSHA1": "N3KZEuQ9O1QwJXcCJbe7Czwroo4=",
-			"path": "google.golang.org/appengine",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "tv0VFrDf6/KRAhWsAL791VJFeo0=",
-			"path": "google.golang.org/appengine/datastore",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "G9Xp1ScdsfcKsw+PcWunivRRP3o=",
-			"path": "google.golang.org/appengine/internal",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "x6Thdfyasqd68dWZWqzWWeIfAfI=",
-			"path": "google.golang.org/appengine/internal/app_identity",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "TsNO8P0xUlLNyh3Ic/tzSp/fDWM=",
-			"path": "google.golang.org/appengine/internal/base",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "5QsV5oLGSfKZqTCVXP6NRz5T4Tw=",
-			"path": "google.golang.org/appengine/internal/datastore",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "Gep2T9zmVYV8qZfK2gu3zrmG6QE=",
-			"path": "google.golang.org/appengine/internal/log",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "eLZVX1EHLclFtQnjDIszsdyWRHo=",
-			"path": "google.golang.org/appengine/internal/modules",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
-		},
-		{
-			"checksumSHA1": "a1XY7rz3BieOVqVI2Et6rKiwQCk=",
-			"path": "google.golang.org/appengine/internal/remote_api",
-			"revision": "267c27e7492265b84fc6719503b14a1e17975d79",
-			"revisionTime": "2016-06-21T05:59:22Z"
 		},
 		{
 			"checksumSHA1": "R/zHGOyQVEPeThF/hfvhwc7BZpk=",
@@ -213,16 +213,10 @@
 			"versionExact": "v1.0.1-GA"
 		},
 		{
-			"checksumSHA1": "Dr7TOKV38bLJ9B8xOHHvR6zp0Ts=",
-			"path": "gopkg.in/vmihailenco/msgpack.v2",
-			"revision": "585b09497e708217121c79a5aa185647b757605a",
-			"revisionTime": "2016-07-03T09:24:33Z"
-		},
-		{
-			"checksumSHA1": "KqVHe5SB85yaDcseNq2CogozjRk=",
-			"path": "gopkg.in/vmihailenco/msgpack.v2/codes",
-			"revision": "585b09497e708217121c79a5aa185647b757605a",
-			"revisionTime": "2016-07-03T09:24:33Z"
+			"checksumSHA1": "exMnsyei9H9PgttMUskof6S2554=",
+			"path": "gopkg.in/urfave/cli.v2",
+			"revision": "e485446237011b8abac93919242e6f059ad56c87",
+			"revisionTime": "2016-10-29T22:39:47Z"
 		},
 		{
 			"path": "proto",

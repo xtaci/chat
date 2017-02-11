@@ -1,35 +1,27 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
+	"github.com/xtaci/chat/kafka"
+
+	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"golang.org/x/net/context"
-	"gopkg.in/vmihailenco/msgpack.v2"
-)
 
-import (
-	. "chat/proto"
-)
+	. "github.com/xtaci/chat/proto"
 
-const (
-	SERVICE = "[CHAT]"
-)
-
-const (
-	BOLTDB_FILE    = "/data/CHAT.DAT"
-	BOLTDB_BUCKET  = "EPS"
-	MAX_QUEUE_SIZE = 128 // num of message kept
-	PENDING_SIZE   = 65536
-	CHECK_INTERVAL = time.Minute
+	cli "gopkg.in/urfave/cli.v2"
 )
 
 var (
@@ -38,49 +30,101 @@ var (
 	ERROR_NOT_EXISTS     = errors.New("id not exists")
 )
 
+type Consumer struct {
+	offset   int64 // next message offset
+	pushFunc func(msg *Chat_Message)
+}
+
 // endpoint definition
 type EndPoint struct {
-	inbox []Chat_Message
-	ps    *PubSub
-	sync.Mutex
+	retention   int
+	StartOffset int64 // offset of the first message
+	Inbox       []Chat_Message
+	consumers   map[uint64]*Consumer
+	chReady     chan struct{}
+	die         chan struct{}
+	mu          sync.Mutex
+}
+
+func newEndPoint(retention int) *EndPoint {
+	ep := &EndPoint{}
+	ep.retention = retention
+	ep.chReady = make(chan struct{}, 1)
+	ep.consumers = make(map[uint64]*Consumer)
+	ep.StartOffset = 1
+	ep.die = make(chan struct{})
+	go ep.pushTask()
+	return ep
 }
 
 // push a message to this endpoint
-func (ep *EndPoint) Push(msg *Chat_Message) {
-	ep.Lock()
-	defer ep.Unlock()
-	if len(ep.inbox) > MAX_QUEUE_SIZE {
-		ep.inbox = append(ep.inbox[1:], *msg)
+func (ep *EndPoint) push(msg *Chat_Message) {
+	if len(ep.Inbox) > ep.retention {
+		ep.Inbox = append(ep.Inbox[1:], *msg)
+		ep.StartOffset++
 	} else {
-		ep.inbox = append(ep.inbox, *msg)
+		ep.Inbox = append(ep.Inbox, *msg)
+	}
+	ep.notifyConsumers()
+}
+
+// closes this endpoint
+func (ep *EndPoint) close() {
+	close(ep.die)
+}
+
+func (ep *EndPoint) notifyConsumers() {
+	select {
+	case ep.chReady <- struct{}{}:
+	default:
 	}
 }
 
-// read all messages from this endpoint
-func (ep *EndPoint) Read() []Chat_Message {
-	ep.Lock()
-	defer ep.Unlock()
-	return append([]Chat_Message(nil), ep.inbox...)
-}
-
-func NewEndPoint() *EndPoint {
-	u := &EndPoint{}
-	u.ps = &PubSub{}
-	u.ps.init()
-	return u
+func (ep *EndPoint) pushTask() {
+	for {
+		select {
+		case <-ep.chReady:
+			ep.mu.Lock()
+			for _, consumer := range ep.consumers {
+				idx := consumer.offset - ep.StartOffset
+				if idx < 0 { // lag behind many
+					idx = 0
+				}
+				for i := idx; i < int64(len(ep.Inbox)); i++ {
+					ep.Inbox[i].Offset = i + ep.StartOffset
+					consumer.pushFunc(&ep.Inbox[i])
+				}
+				consumer.offset = ep.StartOffset + int64(len(ep.Inbox))
+			}
+			ep.mu.Unlock()
+		case <-ep.die:
+		}
+	}
 }
 
 // server definition
 type server struct {
-	eps     map[uint64]*EndPoint // end-point-s
-	pending chan uint64          // dirty id pendings
+	consumerid_autoinc uint64
+	kafkaOffset        int64
+	offsetBucket       string
+	retention          int
+	boltdb             string
+	bucket             string
+	interval           time.Duration
+	eps                map[uint64]*EndPoint // end-point-s
 	sync.RWMutex
 }
 
-func (s *server) init() {
+func (s *server) init(c *cli.Context) {
+	s.retention = c.Int("retention")
+	s.boltdb = c.String("boltdb")
+	s.bucket = c.String("bucket")
+	s.interval = c.Duration("write-interval")
+	s.offsetBucket = c.String("kafka-bucket")
+
 	s.eps = make(map[uint64]*EndPoint)
-	s.pending = make(chan uint64, PENDING_SIZE)
 	s.restore()
+	go s.receive()
 	go s.persistence_task()
 }
 
@@ -91,60 +135,82 @@ func (s *server) read_ep(id uint64) *EndPoint {
 }
 
 // subscribe to an endpoint & receive server streams
-func (s *server) Subscribe(p *Chat_Id, stream ChatService_SubscribeServer) error {
-	// read endpoint
+func (s *server) Subscribe(p *Chat_Consumer, stream ChatService_SubscribeServer) error {
 	ep := s.read_ep(p.Id)
 	if ep == nil {
 		log.Errorf("cannot find endpoint %v", p)
 		return ERROR_NOT_EXISTS
 	}
 
-	// send history chat messages
-	msgs := ep.Read()
-	for k := range msgs {
-		if err := stream.Send(&msgs[k]); err != nil {
-			return nil
-		}
-	}
-
-	// create subscriber
+	consumerid := atomic.AddUint64(&s.consumerid_autoinc, 1)
 	e := make(chan error, 1)
-	var once sync.Once
-	f := NewSubscriber(func(msg *Chat_Message) {
-		if err := stream.Send(msg); err != nil {
-			once.Do(func() { // protect for channel blocking
-				e <- err
-			})
-		}
-	})
 
-	// subscribe to the endpoint
-	log.Debugf("subscribe to:%v", p.Id)
-	ep.ps.Sub(f)
+	// activate consumer
+	ep.mu.Lock()
+
+	// from newest
+	if p.From == -1 {
+		p.From = ep.StartOffset + int64(len(ep.Inbox))
+	}
+	ep.consumers[consumerid] = &Consumer{p.From, func(msg *Chat_Message) {
+		if err := stream.Send(msg); err != nil {
+			select {
+			case e <- err:
+			default:
+			}
+		}
+	}}
+	ep.mu.Unlock()
 	defer func() {
-		ep.ps.Leave(f)
-		log.Debugf("leave from:%v", p.Id)
+		ep.mu.Lock()
+		delete(ep.consumers, consumerid)
+		ep.mu.Unlock()
 	}()
 
-	// client send cancel to stop receiving, see service_test.go for example
+	ep.notifyConsumers()
+
 	select {
 	case <-stream.Context().Done():
-	case <-e:
-		log.Error(e)
+	case err := <-e:
+		return err
 	}
 	return nil
 }
 
-func (s *server) Send(ctx context.Context, msg *Chat_Message) (*Chat_Nil, error) {
-	ep := s.read_ep(msg.Id)
-	if ep == nil {
-		return nil, ERROR_NOT_EXISTS
+func (s *server) receive() {
+	consumer, err := kafka.NewConsumer()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	ep.ps.Pub(msg)
-	ep.Push(msg)
-	s.pending <- msg.Id
-	return OK, nil
+	defer consumer.Close()
+	partionConsumer, err := consumer.ConsumePartition(kafka.ChatTopic, 0, s.kafkaOffset)
+	log.Info("kafkaOffset ", s.kafkaOffset)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer partionConsumer.Close()
+	for {
+		select {
+		case msg := <-partionConsumer.Messages():
+			log.WithField("msg", msg).WithField("OFFSET", s.kafkaOffset).WithField("IsNew", s.kafkaOffset < msg.Offset).Info("Receive")
+			if s.kafkaOffset < msg.Offset {
+				chat := new(Chat_Message)
+				json.Unmarshal(msg.Key, &chat.Id)
+				chat.Body = msg.Value
+				ep := s.read_ep(chat.Id)
+				s.Lock()
+				if ep != nil {
+					ep.mu.Lock()
+					ep.push(chat)
+					ep.mu.Unlock()
+				}
+				s.kafkaOffset = msg.Offset
+				s.Unlock()
+			}
+		}
+	}
+
 }
 
 func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
@@ -156,32 +222,78 @@ func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
 		return nil, ERROR_ALREADY_EXISTS
 	}
 
-	s.eps[p.Id] = NewEndPoint()
-	s.pending <- p.Id
+	s.eps[p.Id] = newEndPoint(s.retention)
 	return OK, nil
+}
+
+func (s *server) Query(ctx context.Context, crange *Chat_ConsumeRange) (*Chat_List, error) {
+	ep := s.read_ep(crange.Id)
+	if ep == nil {
+		return nil, ERROR_NOT_EXISTS
+	}
+
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+
+	if crange.From < ep.StartOffset {
+		crange.From = ep.StartOffset
+	}
+
+	if crange.To > ep.StartOffset+int64(len(ep.Inbox))-1 {
+		crange.To = ep.StartOffset + int64(len(ep.Inbox)) - 1
+	}
+
+	list := &Chat_List{}
+	if crange.To > crange.From {
+		return list, nil
+	}
+
+	for i := crange.From; i <= crange.To; i++ {
+		msg := ep.Inbox[i-ep.StartOffset]
+		msg.Offset = i
+		list.Messages = append(list.Messages, &msg)
+	}
+
+	return list, nil
+}
+
+func (s *server) Latest(ctx context.Context, crange *Chat_ConsumeLatest) (*Chat_List, error) {
+	ep := s.read_ep(crange.Id)
+	if ep == nil {
+		return nil, ERROR_NOT_EXISTS
+	}
+
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+
+	list := &Chat_List{}
+	i := len(ep.Inbox) - int(crange.Length)
+	if i < 0 {
+		i = 0
+	}
+	for ; i < len(ep.Inbox); i++ {
+		offset := int64(i) + ep.StartOffset
+		msg := ep.Inbox[i]
+		msg.Offset = offset
+		list.Messages = append(list.Messages, &msg)
+	}
+	return list, nil
 }
 
 // persistence endpoints into db
 func (s *server) persistence_task() {
-	timer := time.After(CHECK_INTERVAL)
+	ticker := time.NewTicker(s.interval)
+	defer ticker.Stop()
 	db := s.open_db()
-	changes := make(map[uint64]bool)
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
 	for {
 		select {
-		case key := <-s.pending:
-			changes[key] = true
-		case <-timer:
-			s.dump(db, changes)
-			if len(changes) > 0 {
-				log.Infof("perisisted %v endpoints:", len(changes))
-			}
-			changes = make(map[uint64]bool)
-			timer = time.After(CHECK_INTERVAL)
+		case <-ticker.C:
+			s.dump(db)
 		case nr := <-sig:
-			s.dump(db, changes)
+			s.dump(db)
 			db.Close()
 			log.Info(nr)
 			os.Exit(0)
@@ -190,14 +302,19 @@ func (s *server) persistence_task() {
 }
 
 func (s *server) open_db() *bolt.DB {
-	db, err := bolt.Open(BOLTDB_FILE, 0600, nil)
+	db, err := bolt.Open(s.boltdb, 0600, nil)
 	if err != nil {
 		log.Panic(err)
 		os.Exit(-1)
 	}
 	// create bulket
 	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(BOLTDB_BUCKET))
+		_, err := tx.CreateBucketIfNotExists([]byte(s.bucket))
+		if err != nil {
+			log.Panicf("create bucket: %s", err)
+			os.Exit(-1)
+		}
+		_, err = tx.CreateBucketIfNotExists([]byte(s.offsetBucket))
 		if err != nil {
 			log.Panicf("create bucket: %s", err)
 			os.Exit(-1)
@@ -207,28 +324,34 @@ func (s *server) open_db() *bolt.DB {
 	return db
 }
 
-func (s *server) dump(db *bolt.DB, changes map[uint64]bool) {
+func (s *server) dump(db *bolt.DB) {
+	// save offset
 	db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BOLTDB_BUCKET))
-		for k := range changes {
-			ep := s.read_ep(k)
-			if ep == nil {
-				log.Errorf("cannot find endpoint %v", k)
-				continue
-			}
-
-			// serialization and save
-			bin, err := msgpack.Marshal(ep.Read())
-			if err != nil {
-				log.Error("cannot marshal:", err)
-				continue
-			}
-			err = b.Put([]byte(fmt.Sprint(k)), bin)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
+		s.Lock()
+		// write kafka offset
+		b := tx.Bucket([]byte(s.offsetBucket))
+		bin, _ := json.Marshal(s.kafkaOffset)
+		if err := b.Put([]byte(s.offsetBucket), bin); err != nil {
+			log.Error(err)
 		}
+
+		// write endpoints
+		b = tx.Bucket([]byte(s.bucket))
+		eps := make(map[uint64]*EndPoint)
+		for k, v := range s.eps {
+			eps[k] = v
+		}
+
+		for k, ep := range eps {
+			ep.mu.Lock()
+			if bin, err := json.Marshal(ep); err != nil {
+				log.Error("cannot marshal:", err)
+			} else if err := b.Put([]byte(fmt.Sprint(k)), bin); err != nil {
+				log.Error(err)
+			}
+			ep.mu.Unlock()
+		}
+		s.Unlock()
 		return nil
 	})
 }
@@ -239,23 +362,36 @@ func (s *server) restore() {
 	defer db.Close()
 	count := 0
 	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BOLTDB_BUCKET))
+		b := tx.Bucket([]byte(s.offsetBucket))
+		s.kafkaOffset = sarama.OffsetNewest
 		b.ForEach(func(k, v []byte) error {
-			var msg []Chat_Message
-			err := msgpack.Unmarshal(v, &msg)
-			if err != nil {
-				log.Error("chat data corrupted:", err)
-				os.Exit(-1)
+			json.Unmarshal(v, &s.kafkaOffset)
+			return nil
+		})
+
+		b = tx.Bucket([]byte(s.bucket))
+		b.ForEach(func(k, v []byte) error {
+			ep := newEndPoint(s.retention)
+			ep.mu.Lock()
+			if err := json.Unmarshal(v, &ep); err != nil {
+				log.Fatalln("chat data corrupted:", err)
 			}
+
 			id, err := strconv.ParseUint(string(k), 0, 64)
 			if err != nil {
-				log.Error("chat data corrupted:", err)
-				os.Exit(-1)
+				log.Fatalln("chat data corrupted:", err)
 			}
-			ep := NewEndPoint()
-			ep.inbox = msg
+
+			// settings
+			if len(ep.Inbox) > s.retention {
+				remove := len(ep.Inbox) - s.retention
+				if remove > 0 {
+					ep.Inbox = ep.Inbox[remove:]
+				}
+			}
 			s.eps[id] = ep
 			count++
+			ep.mu.Unlock()
 			return nil
 		})
 		return nil
