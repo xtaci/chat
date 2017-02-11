@@ -1,5 +1,5 @@
 # chat(聊天）
-[![Build Status](https://travis-ci.org/gonet2/chat.svg)](https://travis-ci.org/gonet2/chat)
+[![Build Status](https://travis-ci.org/xtaci/chat.svg)](https://travis-ci.org/xtaci/chat)
 
 ## 设计理念
 
