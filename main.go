@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/xtaci/chat/kafka"
+	"chat/kafka"
 
 	cli "gopkg.in/urfave/cli.v2"
 
@@ -14,7 +14,7 @@ import (
 	"github.com/xtaci/logrushooks"
 	"google.golang.org/grpc"
 
-	pb "github.com/xtaci/chat/proto"
+	pb "chat/proto"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "listen",
-				Value: ":10000",
+				Value: ":20000",
 				Usage: "listening address:port",
 			},
 			&cli.StringFlag{
