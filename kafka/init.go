@@ -12,12 +12,13 @@ var (
 	kAsyncProducer sarama.AsyncProducer
 	kClient        sarama.Client
 	ChatTopic      string
+	config         *sarama.Config
 )
 
 func initKafka(addrs []string, chatTopic string) {
 	ChatTopic = chatTopic
-	config := sarama.NewConfig()
-	config.Producer.Return.Successes = true
+	config = sarama.NewConfig()
+	config.Producer.Return.Successes = false
 	config.Producer.Return.Errors = true
 	producer, err := sarama.NewAsyncProducer(addrs, config)
 	if err != nil {
@@ -53,11 +54,12 @@ func SendChat(ep uint64, msg []byte) {
 		Value: sarama.ByteEncoder(msg),
 	}
 	kAsyncProducer.Input() <- pm
-	select {
-	case e := <-kAsyncProducer.Errors():
-		log.Println("error", ChatTopic, ep, e)
-	case <-kAsyncProducer.Successes():
-		// log.Println("succe", s)
-		// default:
+	if config.Producer.Return.Errors || config.Producer.Return.Successes {
+		select {
+		case e := <-kAsyncProducer.Errors():
+			log.Println("error", ChatTopic, ep, e)
+		case <-kAsyncProducer.Successes():
+		default:
+		}
 	}
 }
