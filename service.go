@@ -12,15 +12,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/xtaci/chat/kafka"
+	"golang.org/x/net/context"
+
+	"chat/kafka"
+	. "chat/proto"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
-	"golang.org/x/net/context"
-
-	. "github.com/xtaci/chat/proto"
-
 	cli "gopkg.in/urfave/cli.v2"
 )
 
@@ -98,6 +97,7 @@ func (ep *EndPoint) pushTask() {
 			}
 			ep.mu.Unlock()
 		case <-ep.die:
+			return
 		}
 	}
 }
@@ -114,6 +114,9 @@ type server struct {
 	eps                map[uint64]*EndPoint // end-point-s
 	sync.RWMutex
 }
+
+//assert server is implement ChatServiceServer interface
+var _ ChatServiceServer = (*server)(nil)
 
 func (s *server) init(c *cli.Context) {
 	s.retention = c.Int("retention")
@@ -223,6 +226,19 @@ func (s *server) Reg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
 	}
 
 	s.eps[p.Id] = newEndPoint(s.retention)
+	return OK, nil
+}
+
+func (s *server) UnReg(ctx context.Context, p *Chat_Id) (*Chat_Nil, error) {
+	s.Lock()
+	defer s.Unlock()
+	ep := s.eps[p.Id]
+	if ep == nil {
+		log.Errorf("id not exists:%v", p.Id)
+		return nil, ERROR_NOT_EXISTS
+	}
+	ep.close()
+	delete(s.eps, p.Id)
 	return OK, nil
 }
 

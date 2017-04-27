@@ -1,25 +1,25 @@
 package kafka
 
 import (
+	"fmt"
 	"log"
 
-	cli "gopkg.in/urfave/cli.v2"
-
 	"github.com/Shopify/sarama"
+	"gopkg.in/urfave/cli.v2"
 )
 
 var (
 	kAsyncProducer sarama.AsyncProducer
 	kClient        sarama.Client
 	ChatTopic      string
+	config         *sarama.Config
 )
 
-func initKafka(c *cli.Context) {
-	addrs := c.StringSlice("kafka-brokers")
-	ChatTopic = c.String("chat-topic")
-	config := sarama.NewConfig()
+func initKafka(addrs []string, chatTopic string) {
+	ChatTopic = chatTopic
+	config = sarama.NewConfig()
 	config.Producer.Return.Successes = false
-	config.Producer.Return.Errors = false
+	config.Producer.Return.Errors = true
 	producer, err := sarama.NewAsyncProducer(addrs, config)
 	if err != nil {
 		log.Fatalln(err)
@@ -34,8 +34,32 @@ func initKafka(c *cli.Context) {
 }
 
 func Init(c *cli.Context) {
-	initKafka(c)
+	addrs := c.StringSlice("kafka-brokers")
+	topic := c.String("chat-topic")
+	initKafka(addrs, topic)
 }
+
+func InitTest(addrs []string, chatTopic string) {
+	initKafka(addrs, chatTopic)
+}
+
 func NewConsumer() (sarama.Consumer, error) {
 	return sarama.NewConsumerFromClient(kClient)
+}
+
+func SendChat(ep uint64, msg []byte) {
+	pm := &sarama.ProducerMessage{
+		Topic: ChatTopic,
+		Key:   sarama.StringEncoder(fmt.Sprint(ep)),
+		Value: sarama.ByteEncoder(msg),
+	}
+	kAsyncProducer.Input() <- pm
+	if config.Producer.Return.Errors || config.Producer.Return.Successes {
+		select {
+		case e := <-kAsyncProducer.Errors():
+			log.Println("error", ChatTopic, ep, e)
+		case <-kAsyncProducer.Successes():
+		default:
+		}
+	}
 }
