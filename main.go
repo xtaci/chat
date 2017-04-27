@@ -6,20 +6,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/xtaci/chat/kafka"
-
-	cli "gopkg.in/urfave/cli.v2"
+	"chat/kafka"
+	pb "chat/proto"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/xtaci/logrushooks"
 	"google.golang.org/grpc"
-
-	pb "github.com/xtaci/chat/proto"
+	"gopkg.in/urfave/cli.v2"
 )
 
 func main() {
-	log.AddHook(logrushooks.LineNoHook{})
-
 	go func() {
 		log.Info(http.ListenAndServe("0.0.0.0:6060", nil))
 	}()

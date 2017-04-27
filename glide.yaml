@@ -1,0 +1,19 @@
+package: .
+import:
+- package: github.com/Shopify/sarama
+  version: v1.11.0
+- package: github.com/Sirupsen/logrus
+  version: v0.11.5
+- package: github.com/boltdb/bolt
+  version: v1.3.0
+- package: github.com/golang/protobuf
+  version: master
+  subpackages:
+  - proto
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: google.golang.org/grpc
+  version: v1.2.1
+- package: gopkg.in/urfave/cli.v2
+  version: v2

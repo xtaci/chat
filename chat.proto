@@ -6,6 +6,7 @@ package proto;
 service ChatService {
 	rpc Subscribe(Chat.Consumer) returns (stream Chat.Message); // 订阅消息
 	rpc Reg(Chat.Id) returns (Chat.Nil); // 注册一个EndPoint
+	rpc UnReg(Chat.Id) returns (Chat.Nil); // 取消注册
 	rpc Query(Chat.ConsumeRange) returns (Chat.List); // 返回一个范围的消息
 	rpc Latest(Chat.ConsumeLatest) returns (Chat.List); // 返回最新的消息
 }
@@ -16,24 +17,24 @@ message Chat {
 		repeated Message Messages = 1;
 	}
 	message Id {
-		uint64 Id=1;	
+		uint64 Id	= 1; //EndPoint id
 	}
 	message Message {
-		uint64 Id=1;
-		bytes Body=2;
-		int64 Offset=3;
+		uint64 Id	= 1; //EndPoint id
+		bytes Body	= 2; //message content
+		int64 Offset= 3; //offset
 	}
 	message Consumer{
-		uint64 Id=1;	
-		int64 From=2;
+		uint64 Id	= 1; //EndPoint id
+		int64 From	= 2; // form offset
 	}
 	message ConsumeRange {
-		uint64 Id=1;	
-		int64 From=2;
-		int64 To=3;
+		uint64 Id	= 1; //EndPoint id
+		int64 From	= 2; //form offset
+		int64 To	= 3; //to offset
 	}
 	message ConsumeLatest {
-		uint64 Id=1;	
-		int64 Length=2;
+		uint64 Id		= 1; //EndPoint id
+		int64 Length	= 2; //message num
 	}
 }
